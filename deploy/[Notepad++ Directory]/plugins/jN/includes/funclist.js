@@ -24,10 +24,11 @@
 (function() {
 
 var PATTERNS = new Array;
-addSearchPattern(/^\s*function\s+([\w\dА-я]+)/, 1, 0);
-addSearchPattern(/^\s*([\w\dА-я]+)\.prototype\.([\w\dА-я]+)\s*=\s*function\s*/, 2, 1);
-addSearchPattern(/^SelfScript\.self\[[\'\"](.+?)[\'\"]\]\s*=\s*function/i, 1);
-addSearchPattern(/^\s*sub\s+([\w\dА-я]+)/i, 1, 0); // trdm 
+addSearchPattern(/\s*function\s+([\w\dА-я]+)/i, 1, 0);
+addSearchPattern(/\s*([\w\dА-я]+)\.prototype\.([\w\dА-я]+)\s*=\s*function\s*/i, 2, 1);
+addSearchPattern(/SelfScript\.self\[[\'\"](.+?)[\'\"]\]\s*=\s*function/i, 1);
+addSearchPattern(/\s*sub\s+([\w\dА-я0-9]+)/i, 1, 0); // trdm|vbs
+addSearchPattern(/\s*[\w\dА-я]+\s+([\w\dА-я]+[\:]{2,2}[\w\dА-я]+[\(]+)/i, 1, 0); // trdm|c++.cpp: "retType className::funcName("
 
 
 var JUMP_HISTORY = new Array();
@@ -41,8 +42,14 @@ function trim( str, charlist ) {	// Strip whitespace (or other characters) from 
 	// +	  input by: Erkekjetter
 	// +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
 
-	charlist = !charlist ? ' \s\xA0' : charlist.replace(/([\[\]\(\)\.\?\/\*\{\}\+\$\^\:])/g, '\$1');
+	/*
+	charlist = !charlist ? " \s\xA0" : charlist.replace(/([\[\]\(\)\.\?\/\*\{\}\+\$\^\:])/g, '\$1');
+	charlist = (charlist == " s ") ? ' \s\xA0' : charlist; // " s " - совсем не устраивает
+	
 	var re = new RegExp('^[' + charlist + ']+|[' + charlist + ']+$', 'g');
+	*/
+	// trim("trdms") = trdm //WTF?????
+	var re = new RegExp("^[\\s]+|[\\s]+$", 'g');
 	return str.replace(re, '');
 }
 
@@ -80,7 +87,7 @@ function listScripts() {
 function gotoAnyHtmlTag() {
 	var tagList = new Array;
     var lines = Editor.currentView.lines;    
-	var tagTypeList = 'script,form,img,meta,table,style,head,body,div,ul'.split(',');
+	var tagTypeList = 'script,form,img,meta,table,style,head,body,div,ul,interface,coclass'.split(',');
 	var tagType = selectValue(tagTypeList);
 	if (tagType) {
 		// надо сделать список для выбора типа тега script/form/img/meta
@@ -113,10 +120,12 @@ function gotoAnyHtmlTag() {
 }
 // +trdm }
 
-function listFunctions () {
-
+// ***********************************************************************
+function listFunctions () { // Главная функция скрипта.
+// ***********************************************************************
     var funcList = new Array;
     var funcLines = {};
+	//debugger;
 
     //var lines = StringUtils.toLines(Editor.currentView.text);        
     var lines = Editor.currentView.lines;    
@@ -174,13 +183,12 @@ function selectValue(values) {
         alert("Не удалось создать объект 'Svcsvc.Service'. Зарегистрируйте svcsvc.dll");
         return false;
     }
-
    //alert(values.join("\r\n"));
-   return sel.FilterValue(values.join("\r\n"), 1 /*| 4 */| 512, '', 0, 0, 0, 0);    
+   return sel.FilterValue(values.join("\r\n"), 1 /*| 4 */| 32, '', 0, 0, 0, 0);    
 }
 
 function goToDefinition() {
-    
+    //debugger;
     var word = getWordUnderCursor(Editor.currentView);
     if (word == '') return;
     
@@ -220,10 +228,12 @@ function getWordUnderCursor(view) {
     var pos = { beginRow: view.line, beginCol: view.column };
     var line = currentView.lines.get(view.line).text;
     var isChar = /[\w\dА-я]/;
-
+	// trdm : таб считается за 1 символ в charAt, а в редакторе настраивается, у меня: 4 пробела 
+	//%AppDir%\Application Data\Notepad++\config.xml (NotepadPlus\GUIConfigs\GUIConfig\TabSetting|size="XXXX"
+	line = line.replace(/[\t]/g,"    "); 
     var wordBegPos = pos.beginCol - 1;
-    
-    if (!isChar.test(line.charAt(wordBegPos)))
+    var cChar = line.charAt(wordBegPos);
+    if (!isChar.test(cChar))
         return '';
         
     while (wordBegPos > 0)
@@ -284,13 +294,169 @@ function jumpBack() {
     }
 }
 
+// trdm
+function myPutnoSwitcher() {
+	var selText = Editor.currentView.selection;
+	var en = " qwertyuiop[]asdfghjkl;'zxcvbnm,..QWERTYUIOP[]ASDFGHJKL;'ZXCVBNM,./";
+	var ru = " йцукенгшщзхъфывапролджэячсмитьбю.ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ.";
+	var word = "";
+	for (i = 0; i<selText.length; i++ ) {
+		cChar = selText.charAt(i);
+		pos = en.indexOf(cChar);
+		if (pos != -1) {
+			cChar = ru[pos];
+		}
+		word = word + cChar; 
+	}
+	Editor.currentView.selection = word;
+	//фдуке(word);
+}
+function formatN(num, len) {
+	var retVal = "00000000" + num;
+	return retVal.substr(retVal.length-len);
+	//return retVal.substr(-len); // <-так не работает.
+}
+// 2017-11-17 14:52:19
+// formatData(Today,'yyyy-MM-dd HH:mm:ss');
+function formatData(data, fmString) {
+	//debugger;
+	var retVal = fmString;
+	var re = /(dd|MMMM|MM|yyyy|yy|hh|HH|mm|ss|tt|S)/g;
+	var monsArr = new Array("январь,февраль,март,апрель,май,июнь,июль,август,сентябрь,октябрь,ноябрь,декабрь");
+	var td = {}
+	td.hh = formatN(data.getHours(),2);
+	td.mm = formatN(data.getMinutes(),2);
+	td.ss = formatN(data.getSeconds(),2);
+	td.DD = formatN(data.getDate(),2);
+	td.MM = formatN(data.getMonth()+1,2);
+	td.MMMM = monsArr[data.getMonth()];
+	td.YY = formatN(data.getFullYear(),2);
+	td.YYYY = formatN(data.getFullYear(),4);
+		
+	var reRe = "";
+	while ((reRe = re.exec(fmString)) != null) {
+		var fRes = reRe[0];
+		switch(fRes) {
+			case "hh":
+			case "HH":
+				retVal = retVal.replace(fRes,td.hh);
+				break;
+			case "mm":
+				retVal = retVal.replace(fRes,td.mm);
+				break;
+			case "ss":
+			case "SS":
+			case "S":
+				retVal = retVal.replace(fRes,td.ss);
+				break;
+			case "yyyy":
+			case "YYYY":
+				retVal = retVal.replace(fRes,td.YYYY);
+				break;
+			case "YY":
+				retVal = retVal.replace(fRes,td.YY);
+				break;
+			case "dd":
+			case "DD":
+				retVal = retVal.replace(fRes,td.DD);
+				break;
+			case "MM":
+				retVal = retVal.replace(fRes,td.MM);
+				break;
+			case "MMMM":
+				retVal = retVal.replace(fRes,td.MMMM);
+				break;
+			default: {
+				break;
+			};
+		}
+	}
+	return retVal;
+}
+
+// (c) trdm : trdmval@gmail.com 2017-11-17 14:52:19
+function myTemplaterF(selText) {
+	vSelText = selText.toLowerCase();
+	switch(vSelText){
+		case "datetime":
+		case "датавремя":
+			var Today = new Date();
+			selText = formatData(Today,'yyyy-MM-dd HH:mm:ss');
+			break;
+		case "time":
+		case "время":
+			var Today = new Date();
+			selText = formatData(Today,'HH:mm:ss');
+			break;
+		case "date":
+		case "дата":
+			var Today = new Date();
+			selText = formatData(Today,'yyyy-MM-dd');
+			break;
+		case "trdms": // простой trdm :)
+			var Today = new Date();
+			selText = "//trdm: " + formatData(Today,'yyyy-MM-dd HH:mm:ss');			
+			break;
+		case "trdm":
+			var Today = new Date();
+			selText = "//(c)trdm:trdmval@gmail.com " + formatData(Today,'yyyy-MM-dd HH:mm:ss');
+			break;
+		default: {
+				break;
+		};			
+	}
+	return selText;	
+}
+
+function myTemplateList() {
+	var tList = new Array();
+	tList.push("trdm","trdms","date","time","datetime","дата","время","датавремя");
+	word = selectValue(tList);
+	if (word !== 0) {
+		Editor.currentView.selection = word;
+	}
+}
+
+function myTemplater() {
+	//debugger;
+	var selText = Editor.currentView.selection;
+	selText = trim(selText);
+	selText = myTemplaterF(selText);
+	Editor.currentView.selection = selText;
+}
 ////////////////////////////////////////////////////////////////////////////////////////
 //{ StartUp
 
 var scriptsMenu = Editor.addMenu("Скрипты");
+jN.scriptsMenu = scriptsMenu;
 
 // Виртуальные коды клавиш см. по ссылке: http://msdn.microsoft.com/en-us/library/dd375731(VS.85).aspx
+//{
+var myPutnoSwitcherItem = {
+    text: "Putno switcher\tF6", 
+    ctrl: false,
+    shift: false,
+    alt: false,
+    key: 0x75,
+    cmd: myPutnoSwitcher
+};
 
+addHotKey(myPutnoSwitcherItem);
+scriptsMenu.addItem(myPutnoSwitcherItem);
+
+var myTemplaterItem = {
+    text: "Templater\tShift+F12", 
+    ctrl: false,
+    shift: true,
+    alt: false,
+    key: 0x7B,
+    cmd: myTemplater	
+}
+addHotKey(myTemplaterItem);
+scriptsMenu.addItem(myTemplaterItem);
+
+	
+//}
 
 //{ Список функций 
 var listFunctionsItem = {

@@ -1,4 +1,5 @@
 ﻿var testMenu = Editor.addMenu("Tests");
+//testMenu
 
 /*
 	Editor samples
@@ -215,12 +216,12 @@ wmi.addItem({
 
 (function(){
 	// Power Plans
-	try{
+	try{		
 		var objWMIService = GetObject("winmgmts:{impersonationLevel=impersonate}!//./root/cimv2/power");
-	}catch(e){
-		// service not available
+	} catch(e) {
 		return;
 	}
+	
 	
 	var planItems = {};
 	
