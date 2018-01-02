@@ -1,0 +1,4 @@
+0000 addItem() | VT_DISPATCH/IMenuItem Appends a new menu item to the menu. Returns new menu item object. cfg = {text:'My Menu', cmd:function(){}}
+0000 addMenu() | VT_VARIANT/IMenu Appends a new menu and returns its. cfg = {text:'my menu', oninitpopup:function(){}}
+0000 addSeparator() | Appends a separator to the menu.
+

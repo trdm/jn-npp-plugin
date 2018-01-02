@@ -1,0 +1,99 @@
+#секция объектов плагина jN
+Object = Editor.addHotKey()
+Object = addHotKey()
+Menu = Editor.addMenu()
+Menu = addMenu()
+CtxMenu = Editor.createContextMenu()
+CtxMenu = createContextMenu()
+Dialog = Editor.createDockable()
+Dialog = createDockable()
+View = Editor.currentView
+View = currentView
+View = Editor.firstView
+View = firstView
+Array = Editor.langs
+Array = langs
+View = Editor.secondView
+View = secondView
+Object = Editor.setListener
+Object = setListener
+ViewLines = View.lines
+ViewLine = ViewLines.get()
+Object = System.addIdleHandler()
+Object = addIdleHandler()
+Object = System.addScript()
+Object = addScript()
+Object = System.addSystemHotKey()
+Object = addSystemHotKey()
+Dialog = System.createDialog()
+Dialog = createDialog()
+Library = System.loadLibrary()
+Library = loadLibrary()
+CallBack = System.registerCallBack()
+CallBack = registerCallBack()
+document = Dialog.document
+MenuItem = CtxMenu.addItem()
+Menu = CtxMenu.addMenu()
+MenuItem = Menu.addItem()
+Menu = Menu.addMenu()
+
+#секция объектов javascript
+Array = Array.sort()
+Array = Array.slice()
+String = Array.join()
+Array = Array.concat()
+Array = Array.splice()
+String = Date.toLocaleString()
+String = Date.toGMTString()
+String = Date.toLocaleFormat()
+String = Date.toLocaleTimeString()
+String = Date.toLocaleDateString()
+String = Date.toString()
+String = Date.toTimeString()
+String = Date.toDateString()
+String = Date.toUTCString()
+String = Number.toExponential()
+String = Number.toString()
+NaN = Number.NaN
+String = Object.toString()
+Object = Object.prototype
+Array = Array.prototype
+Date = Date.prototype
+String = RegExp.toString()
+Array = RegExp.exec()
+Array = String.split()
+String = String.substr()
+String = String.concat()
+Array = String.match()
+String = String.replace()
+String = String.slice()
+String = String.substring()
+String = String.toLowerCase()
+String = String.toUpperCase()
+String = String.toLocaleLowerCase()
+String = String.toLocaleUpperCase()
+String = String.toString()
+String = decodeURI()
+String = encodeURI()
+String = decodeURIComponent()
+String = encodeURIComponent()
+Array = arguments
+
+#Секция DOM
+Array.HTMLElement = document.getElementsByTagName()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,8 @@
+0000 byteEnd | VT_INT Gets Byte position of line end including any line end characters. Faster than 'end' property.
+0000 byteStart | VT_INT	Gets Byte position of line beginning. Faster than 'start' property.
+0000 end | VT_INT Gets Character position of line end in document
+0000 number | VT_INT Gets Line number
+0000 start | VT_INT	Gets Character position of line beginning in document
+0000 text | VT_BSTR	Gets or Sets Line text including any line end characters. The setting of line text changes the text selection.
+
+

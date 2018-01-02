@@ -1,0 +1,3 @@
+0000 count | VT_INT	Gets The count of lines.
+0000 current | VT_INT Gets or Sets The current line of view.
+0000 get(line) | IViewLine Returns the line object with specified number.

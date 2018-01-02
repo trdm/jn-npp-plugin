@@ -1,0 +1,13 @@
+0000 addIdleHandler(cfg) | VT_DISPATCH	Adds new idle handler. The cmd callback function of cfg will be called once if the application has nothing to do. Be aware, what you do in a handle, it can lead to a deadlock.
+0000 addScript(name) | VT_VARIANT Runs the given javascript expression. Prefer this function to javascript's eval. It allows you to get the script position in case of errors.
+0000 addSystemHotKey(cfg) | VT_DISPATCH Adds new system wide hot key combination. cfg = {ctrl:true, shift:false, alt:true, key:'a', cmd: function(){}}. The cfg.key property can be a character or number. You find valid numbers (virtual-key codes) on MSDN
+0000 clipBoard | VT_BSTR	Gets or Sets Text data on the Clipboard.
+0000 createDialog(cfg) | VT_DISPATCH/IDialog Creates new dialog window described by cfg object. cfg = {onbeforeclose:function(){return true; // or false for cancel }, onclose:function(){}}. See dialog.js for example.
+0000 decodeFrom(codepage,src) | Decodes source string encoded by codepage.
+0000 encodeTo(codepage,src) | Encodes source string by codepage.
+0000 loadLibrary(libraryPath) | Loads given dll.
+0000 registerCallBack(cfg,stacksize) | Registers cfg = {cmd:function(stackbuffer){}} as next callback function.It is possible to register only 12 callback functions at the same time.
+0000 scriptFullName | VT_BSTR Gets Full path of start script file.
+0000 setTimeout(cfg) | Appends a new timer to the queue. cfg = {millis:1234, cmd:function(){}}
+0000 showNotification(cfg) | Creates and shows user notification in system tray. cfg = {title='My Title', msg='long message'}
+

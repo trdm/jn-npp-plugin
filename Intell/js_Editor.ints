@@ -1,0 +1,21 @@
+0000 addHotKey(cfg) | VT_DISPATCH Adds new application wide hot key combination. For cfg see addSystemHotKey method.
+0000 addMenu(cfg) | VT_VARIANT/IMenu Appends new menu to the main window. Returns object representing the new menu. See IMenu.addMenu about cfg.
+0000 alert(value) | VT_BSTR Displays a dialog box containing an application-defined message.
+0000 createContextMenu(cfg) | VT_VARIANT/ICtxMenu Creates an empty context menu. cfg = {oninitpopup:function(){}}
+0000 createDockable(cfg) |  VT_DISPATCH/IDialog Creates new dockable window described by cfg object. cfg = {name:'Tab name', docking:'(top|bottom|left|right|floating)', onbeforeclose:function(){return true; // false - hides the window, but avoids its destroing }, onclose:function(){}}.
+0000 currentView | IView Gets The view with currently active document.
+0000 firstView | IView Gets The always visible view of editor. It is the left view.
+0000 handle | VT_INT Gets Window handle of Editor.
+0000 langs | VT_DISPATCH Gets Array of languages source code can be written in.
+0000 menuHidden | VT_BOOL Gets or Sets Value indicating whether the main menu is hidden.
+0000 nppDir | VT_BSTR Gets Directory of Notepad++.
+0000 open(filePath) | VT_BSTR Opens the file specified by the given file path.
+0000 pluginConfigDir | VT_BSTR	Gets Plugin directory of Notepad++.
+0000 runMenuCmd(cmd) | VT_INT Runs a specified build-in menu command of Notepad++.
+0000 saveAll() | Saves all the opened files.
+0000 secondView | IView Gets The right view of editor.
+0000 setListener(cfg) | VT_DISPATCH	Sets new listener object with a lot of callback functions representing event handler. See start.js
+0000 statusBarHidden | VT_BOOL	Gets or Sets Value indicating whether the status bar is hidden.
+0000 tabBarHidden | VT_BOOL	Gets or Sets Value indicating whether the tab bar is hidden.
+0000 toolBarHidden | VT_BOOL Gets or Sets Value indicating whether the tool bar is hidden.
+

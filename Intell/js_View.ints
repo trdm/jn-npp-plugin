@@ -1,0 +1,16 @@
+0000 anchor | VT_INT Gets or Sets Character position of anchor.
+0000 byteAnchor | VT_INT Gets or Sets Byte position of anchor.
+0000 bytePos | VT_INT Gets or Sets Byte position in document.
+0000 codepage | VT_INT Gets or Sets Code page of current file.
+0000 column | VT_INT Gets Column position.
+0000 file | VT_INT Gets or Sets Current file in the view.
+0000 files | VT_DISPATCH Gets Array of the file names opened in the view.
+0000 handle | VT_INT Gets Window handle of view.
+0000 lang | VT_INT Gets or Sets Language of the currently active document. It is an index in Editor.langs
+0000 line | VT_INT Gets or Sets The current line of view.
+0000 lines | IViewLines Gets Lines object of view.
+0000 navBarHidden | VT_BOOL Gets or Sets Value indicating whether the navigation bar is visible.
+0000 pos | VT_INT Gets or Sets Character position in document.
+0000 selection | VT_BSTR Gets or Sets Selected text in the view.
+0000 text | VT_BSTR Gets or Sets The text of view.
+

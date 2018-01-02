@@ -1,0 +1,14 @@
+0000 clientHeight | VT_INT	Gets or Sets Height of client area of dialog window.
+0000 clientWidth | VT_INT	Gets or Sets Width of client area of dialog window.
+0000 close() | Hides and prepares the dialog window to be destroyed.
+0000 document | VT_DISPATCH	Gets DOM Document that is the representation of client area of dialog window.
+0000 foreground() | Sets window into the foreground and activates it.
+0000 handle	| VT_INT Gets Window handle of dialog.
+0000 height | VT_INT	Gets or Sets Height of dialog window.
+0000 left | VT_INT	Gets or Sets Distance, in pixels, between the left edge of the dialog window and the left edge of screen.
+0000 title | VT_BSTR	Gets or Sets Title of the dialog window.
+0000 top | VT_INT	Gets or Sets Distance, in pixels, between the top edge of the dialog window and the top edge of screen.
+0000 visible | VT_BOOL	Gets or Sets Value indicating whether the dialog is visible.
+0000 width | VT_INT Gets or Sets Width of dialog window.
+
+

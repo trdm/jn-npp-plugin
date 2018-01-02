@@ -1,0 +1,13 @@
+0000 alloc() | Allocates specified number of bytes.
+0000 call() | Calls specified function.
+0000 copy() | Copies bytes from src to dest beginning at pos.
+0000 readBSTR() | Reads (4 Bytes) from src beginning at pos and interprets it as BSTR.
+0000 readByte() | Reads BYTE from src beginning at pos.
+0000 readDWord() | Reads DWORD from src beginning at pos.
+0000 readInt64() | Reads INT64 from src beginning at pos.
+0000 readWord() | Reads WORD from src beginning at pos.
+0000 writeByte() | Writes BYTE from value to dest beginning at pos.
+0000 writeDWord() | Writes DWORD from value to dest beginning at pos.
+0000 writeInt64() | Writes INT64 from value to dest beginning at pos.
+0000 writeWord() | Writes WORD from value to dest beginning at pos.
+

@@ -1,0 +1,5 @@
+0000 checked | VT_BOOL	Gets or Sets Value indicating whether a check mark appears next to the text of the menu item.
+0000 disabled | VT_BOOL	Gets or Sets Value indicating whether the menu item can respond to user interaction.
+0000 remove() | Removes the menu item from it's parent.
+0000 text | VT_BSTR	Gets or Sets Text of menu item
+
