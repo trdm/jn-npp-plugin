@@ -19,13 +19,15 @@
 	Спасибо им огромное!
 	---------------------------------------------------------------------
 	Скрипт: Intell.js, 
+	Версия: 0.1.0
+	Версия внутр.: $Revision: 0.20 $
 	Автор: Трошин Дмитрий, trdmval@gmail.com, skype: trdmval
 	Поддержать проект: яндекс-кошелек 410015947831889
 	Функционал:
 	- подсказка по методам и свойствам встроенных объектов языка javascript	
-*/ /*  Тулзы и описание вспомогательных файлов
-	- протестировать регулярки можно тут: https://www.regextester.com/
 	
+	Тулзы и описание вспомогательных файлов
+	- протестировать регулярки можно тут: https://www.regextester.com/
 	intell_otd.dict - файл содержащий словарь в виде объектов и имен файлов (otd - OtherTypesDefine)
 	-------------------------------------------------------------
 	Scripting.Dictionary,scripting_dictionary
@@ -35,13 +37,15 @@
 	--------------------------------------------------------------
 	Используется еще и как словарь progid-ов для выбора в конструкциях:
 	new ActiveXObject("|") и CreateObject("|")
+	а так же как список progId-dumped, т.е. как список прогидов которые обработаны tlbinf32.dll
 
-	2017-12-25 16:22:36
-	todo - посмотреть C:\Progekts\_Utils\_Npp\sourcecookifier\sourcecookifier\SourceCookifier 
-		на предмет разбора файлов исходников.
-*/
+	todo:
+	- можно ли как-то узнать от сцинтилы что позиция курсора находится в многострочном коментарии? тогда бы не пришлось парсить текст полностью. иотключить IntelliSense для коментариев.
+	- посмотреть C:\Progekts\_Utils\_Npp\sourcecookifier\sourcecookifier\SourceCookifier на предмет разбора файлов исходников.
+	- посмотреть https://msdn.microsoft.com/ru-ru/library/bb385682.aspx IntelliSense для JavaScript для Visual Studio
+	- список задач в ..\Notepad++\plugins\jN\includes\disabled\_test.js
 
-/* 	gJsLvalDict = new ActiveXObject("Scripting.Dictionary"); 
+ 	gJsLvalDict = new ActiveXObject("Scripting.Dictionary"); 
 	Вспомогательный словарь для определения типов, формат ТипОбъекта = ТипОбъекта.Свойство|Метод
 	Инициализировать будем 1 раз в процедуре.
 */
@@ -675,6 +679,7 @@ function getWordList() {
 	var retVal = '';
 	var cw = IntellPlus.getCurWord(); 
 	if (!cw) return;
+	if (IntellPlus.curLang != "js") return;
 	
 	view  = Editor.currentView;
 	var currentLine = IntellPlus.currentLine;
@@ -736,7 +741,7 @@ gSwitchDebugModeMenuItem = scriptsMenu.addItem(mySwitchIntellDebugMode);
 gSwitchDebugModeMenuItem.checked = gIntellDebug;
 
 var myMethodListItem = {
-    text: "Method list\tctrl+I", 
+    text: "Intelisense run\tctrl+I", 
     ctrl: true,
     shift: false,
     alt: false,
