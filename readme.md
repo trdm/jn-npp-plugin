@@ -41,4 +41,4 @@ Profiler.dll - профайлер. Он используется для целе
 Успешность разбора текста зависит от стиля кодинга. Скрипт ориентирован на тексты с классическим процедурным 
 программированием.
 
-![screenshot](https://github.com/trdm/jn-npp-scripts/blob/master/Doc/exam.png)
+![screenshot](https://github.com/trdm/jn-npp-scripts/blob/master/Doc/exam20180119.gif)
