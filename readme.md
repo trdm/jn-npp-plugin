@@ -1,9 +1,6 @@
-### Скрипты для плагина jN для Notepad++
-Описание самого плагина можно найти тут: https://github.com/sieukrem/jn-npp-plugin/wiki
-Описание скриптов и многие полезные скрипты можно найти тут: https://github.com/KOLANICH/jN-npp-scripts
+# Скрипты для плагина jN для Notepad++
 
-## функционал:
-# funclist.js, функционал:
+### funclist.js, функционал:
 - Список функций Ctrl+1
 	Для javascript и vbscript позволяет перейти к функции с помощью списка выбора.
 - Перейти к определению F12" 
@@ -11,10 +8,18 @@
 	будь то функция или переменная.
 ![screenshot](https://github.com/trdm/jn-npp-scripts/blob/master/Doc/exam20180119_2.gif)
 
+### Intell.js,  функционал:
+- Подсказка по методам встроенных объектов и классов пользователя:
+![screenshot](https://github.com/trdm/jn-npp-scripts/blob/master/Doc/Intel_2.gif)
+- Подсказка по методам ActiveX - объектов.
+![screenshot](https://github.com/trdm/jn-npp-scripts/blob/master/Doc/Intel_4.gif)
+- Механизм шаблонов:
+![screenshot](https://github.com/trdm/jn-npp-scripts/blob/master/Doc/Intel_6T3.gif)
 
-Основной скрипт, ради которого заводился этот репозиторий, это Intell.js - реализация функционала 
-Intellisense и завершения кода для javascript и (в перспективе) vbcsript.
-
+Взять сам Notepad++ c установлеными скриптами можно в каталоге Bin.
+https://github.com/trdm/jn-npp-scripts/blob/master/Bin/NotepadPP.7z
+Описание самого плагина можно найти тут: https://github.com/sieukrem/jn-npp-plugin/wiki
+Описание скриптов и многие полезные скрипты можно найти тут: https://github.com/KOLANICH/jN-npp-scripts
 
 ### Установка:
 ### Установка самого плагина:
@@ -44,4 +49,3 @@ Profiler.dll - профайлер. Он используется для целе
 Успешность разбора текста зависит от стиля кодинга. Скрипт ориентирован на тексты с классическим процедурным 
 программированием.
 
-![screenshot](https://github.com/trdm/jn-npp-scripts/blob/master/Doc/exam20180119.gif)

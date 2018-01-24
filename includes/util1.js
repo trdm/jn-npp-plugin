@@ -1,5 +1,5 @@
-/* Складывает минуты в форме: 
-15, 2.20, 20, 25 = 3.20 где 3,20 - 3 часа, 20 минут
+п»ї/* вЂ”РєР»Р°РґС‹РІР°РµС‚ РјРёРЅСѓС‚С‹ РІ С„РѕСЂРјРµ: 
+15, 2.20, 20, 25 = 3.20 РіРґРµ 3,20 - 3 С‡Р°СЃР°, 20 РјРёРЅСѓС‚
 35, 50, 40, 55, 45, 40
 */
 //(c)trdmval@gmail.com 2017-12-28 11:23:09
@@ -23,7 +23,7 @@ function timeAddition()
 		}
 	}
 	if (result <= 0) {
-		alert("Ќужно выделить числа, типа: 15, 2.20, 20, 25")
+		alert("РќСѓР¶РЅРѕ РІС‹РґРµР»РёС‚СЊ С‡РёСЃР»Р°, С‚РёРїР°: 15, 2.20, 20, 25")
 	}
 		
 	var resultH = (result / 60);
@@ -37,7 +37,7 @@ function timeAddition()
 	result = parseFloat(tmS);
 }
 jN.scriptsMenu = (!jN.scriptsMenu) ? {} : jN.scriptsMenu;
-scriptsMenu = jN.scriptsMenu; // глобальнаЯ переменнаЯ с меню скриптами.
+scriptsMenu = jN.scriptsMenu; // РіР»РѕР±Р°Р»СЊРЅР°СЏ РїРµСЂРµРјРµРЅРЅР°СЏ СЃ РјРµРЅСЋ СЃРєСЂРёРїС‚Р°РјРё.
 
 var myTimeAdditionItem = {
     text: "Time addition", 
@@ -47,6 +47,7 @@ var myTimeAdditionItem = {
     key: 0, // "I"
     cmd: timeAddition
 };
+scriptsMenu.addSeparator();
 addHotKey(myTimeAdditionItem); scriptsMenu.addItem(myTimeAdditionItem);
 
 //timeAddition();

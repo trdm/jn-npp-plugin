@@ -21,34 +21,37 @@
 ////}
 ////////////////////////////////////////////////////////////////////////////////////////
 
+// trdm todo: Надо сделать настройку сортировки списка функций.
+
 (function() {
 
 var PATTERNS = new Array;
+//function addSearchPattern(pattern, nameIndex, classIndex) {
 addSearchPattern(/\s*function\s+([\w\dА-я]+)/i, 1, 0);
 addSearchPattern(/\s*([\w\dА-я]+)\.prototype\.([\w\dА-я]+)\s*=\s*function\s*/i, 2, 1);
 addSearchPattern(/SelfScript\.self\[[\'\"](.+?)[\'\"]\]\s*=\s*function/i, 1);
 addSearchPattern(/\s*sub\s+([\w\dА-я0-9]+)/i, 1, 0); // trdm|vbs
 addSearchPattern(/\s*[\w\dА-я]+\s+([\w\dА-я]+[\:]{2,2}[\w\dА-я]+[\(]+)/i, 1, 0); // trdm|c++.cpp: "retType className::funcName("
+addSearchPattern(/[\s+|,]([\w\dА-я]+)\s*[\:]\s*function\s*\(/i, 1, 0);; // trdm|js fore: getCells:function(isOn, indicatorNr)
+addSearchPattern(/[\s+|,]this\.([\w\dА-я]+)\s*[\=]\s*function\s*\(/i, 1, 0);; // trdm|js fore: getCells:function(isOn, indicatorNr)
+// this.getLastClassPosLine = function (psLine, psScrFName) { <<< \todo - не ищет //trdm: 2018-01-18 08:03:36 
+//addSearchPattern(/\s*процедура|Функция\s+([\w\dА-я0-9]+)\(/i, 1, 0); // trdm|1s
+//addSearchPattern(/(Процедура|Функция\s+([a-zа-яё_]+))\s*[\(]+/igm, 1, 0); // trdm|1s
+// todo для *.1s надо использовать Скрипт=СоздатьОбъект("MSScriptControl.ScriptControl"); и парсить регулярками из vbs
 
-
+/* todo трдм можно организовать полный JUMP_HISTORY, у которого будет сохраняться история 
+ну скажем 50 последних перемещений и будет список выбора для прыжка и можно будет не
+ только возвращаться назад, но и идти вперед*/
 var JUMP_HISTORY = new Array();
+var gSelector;
+try {
+	gSelector = new ActiveXObject('Svcsvc.Service')
+} catch(e) {
+	gSelector = "";
+}
 
 // +trdm {
 function trim( str, charlist ) {	// Strip whitespace (or other characters) from the beginning and end of a string
-	// 
-	// +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
-	// +   improved by: mdsjack (http://www.mdsjack.bo.it)
-	// +   improved by: Alexander Ermolaev (http://snippets.dzone.com/user/AlexanderErmolaev)
-	// +	  input by: Erkekjetter
-	// +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
-
-	/*
-	charlist = !charlist ? " \s\xA0" : charlist.replace(/([\[\]\(\)\.\?\/\*\{\}\+\$\^\:])/g, '\$1');
-	charlist = (charlist == " s ") ? ' \s\xA0' : charlist; // " s " - совсем не устраивает
-	
-	var re = new RegExp('^[' + charlist + ']+|[' + charlist + ']+$', 'g');
-	*/
-	// trim("trdms") = trdm //WTF?????
 	var re = new RegExp("^[\\s]+|[\\s]+$", 'g');
 	return str.replace(re, '');
 }
@@ -75,7 +78,7 @@ function listScripts() {
         }
     }
     
-    var selScri = selectValue(scrList);
+    var selScri = selectValue(scrList,"Выберите скрипт");
     if (selScri) {
 		var lNo = selScri.match(/\d+/)[0];
         goToLine(lNo);//        goToLine(scrLines[selScri]);
@@ -88,7 +91,7 @@ function gotoAnyHtmlTag() {
 	var tagList = new Array;
     var lines = Editor.currentView.lines;    
 	var tagTypeList = 'script,form,img,meta,table,style,head,body,div,ul,interface,coclass'.split(',');
-	var tagType = selectValue(tagTypeList);
+	var tagType = selectValue(tagTypeList,"Выберите тег");
 	if (tagType) {
 		// надо сделать список для выбора типа тега script/form/img/meta
 		//debugger;
@@ -110,7 +113,7 @@ function gotoAnyHtmlTag() {
 			}
 		}
 		
-		var selScri = selectValue(tagList);
+		var selScri = selectValue(tagList,"Выберите HTML тег");
 		if (selScri) {
 			var lNo = selScri.match(/\d+/)[0];
 			goToLine(lNo);//        goToLine(scrLines[selScri]);
@@ -140,7 +143,7 @@ function listFunctions () { // Главная функция скрипта.
         }
     }
     
-    var selFunc = selectValue(funcList);
+    var selFunc = selectValue(funcList,"Выберите функцию");
     if (selFunc) 
         goToLine(funcLines[selFunc]);
         
@@ -173,18 +176,17 @@ function addSearchPattern(pattern, nameIndex, classIndex) {
     });
 }
 
-function selectValue(values) {
-    try
-    {
+function selectValue(values, psCaption) {
+	
+    try    {
         var sel = new ActiveXObject('Svcsvc.Service')
     }
-    catch(e)
-    {
+    catch(e)    {
         alert("Не удалось создать объект 'Svcsvc.Service'. Зарегистрируйте svcsvc.dll");
         return false;
     }
    //alert(values.join("\r\n"));
-   return sel.FilterValue(values.join("\r\n"), 1 /*| 4 */| 32, '', 0, 0, 0, 0);    
+   return gSelector.FilterValue(values.join("\r\n"), 1 /*| 4 */| 32, psCaption, 0, 0, 0, 0);    
 }
 
 function goToDefinition() {
@@ -197,6 +199,10 @@ function goToDefinition() {
     re.push(new RegExp('\\s*[\\w\\dА-я]+\\.prototype\\.' + word + '\\s*=\\s*function\\s*\\('));
     re.push(new RegExp('var\\s+' + word + '\\s*[,;=]')); 
 	// trdm  {
+    re.push(new RegExp('[\\s|,]?'+word+'\\s*\\:\\s*function\\s+')); // function в объекте
+    re.push(new RegExp('[\\s|,]this\\.'+word+'\\s*\\=\\s*function[\\s|\\(]+')); // 	this.getLastClassPosLine = function (psLine, psScrFName) {
+    re.push(new RegExp('[\\s]*this\\.'+word+'\\s*\\=\\s*')); // переменная в объекте
+    re.push(new RegExp('[\\s|,]?'+word+'\\s*\\:\\s*')); // переменная в объекте
     re.push(new RegExp('\\s+' + word + '\\s*[,;=]','i')); //vbs
     re.push(new RegExp('set\\s+' + word + '\\s*[,;=]','i')); //vbs
     re.push(new RegExp('dim\\s+' + word + '\\s*','i')); 
@@ -208,7 +214,8 @@ function goToDefinition() {
         for (var reNo=0; reNo<re.length; reNo++)
         {
             var text = lines.get(lineNo).text;
-            if (re[reNo].exec(text))
+			var reRe = re[reNo].exec(text);
+            if (reRe)
             {
                 // Позиционируемся на нужную строку.
                 goToLine(lineNo);
@@ -294,167 +301,17 @@ function jumpBack() {
     }
 }
 
-// trdm
-function myPutnoSwitcher() {
-	var selText = Editor.currentView.selection;
-	var en = " qwertyuiop[]asdfghjkl;'zxcvbnm,..QWERTYUIOP[]ASDFGHJKL;'ZXCVBNM,./";
-	var ru = " йцукенгшщзхъфывапролджэячсмитьбю.ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ.";
-	var word = "";
-	for (i = 0; i<selText.length; i++ ) {
-		cChar = selText.charAt(i);
-		pos = en.indexOf(cChar);
-		if (pos != -1) {
-			cChar = ru[pos];
-		}
-		word = word + cChar; 
-	}
-	Editor.currentView.selection = word;
-	//фдуке(word);
-}
-function formatN(num, len) {
-	var retVal = "00000000" + num;
-	return retVal.substr(retVal.length-len);
-	//return retVal.substr(-len); // <-так не работает.
-}
-// 2017-11-17 14:52:19
-// formatData(Today,'yyyy-MM-dd HH:mm:ss');
-function formatData(data, fmString) {
-	//debugger;
-	var retVal = fmString;
-	var re = /(dd|MMMM|MM|yyyy|yy|hh|HH|mm|ss|tt|S)/g;
-	var monsArr = new Array("январь,февраль,март,апрель,май,июнь,июль,август,сентябрь,октябрь,ноябрь,декабрь");
-	var td = {}
-	td.hh = formatN(data.getHours(),2);
-	td.mm = formatN(data.getMinutes(),2);
-	td.ss = formatN(data.getSeconds(),2);
-	td.DD = formatN(data.getDate(),2);
-	td.MM = formatN(data.getMonth()+1,2);
-	td.MMMM = monsArr[data.getMonth()];
-	td.YY = formatN(data.getFullYear(),2);
-	td.YYYY = formatN(data.getFullYear(),4);
-		
-	var reRe = "";
-	while ((reRe = re.exec(fmString)) != null) {
-		var fRes = reRe[0];
-		switch(fRes) {
-			case "hh":
-			case "HH":
-				retVal = retVal.replace(fRes,td.hh);
-				break;
-			case "mm":
-				retVal = retVal.replace(fRes,td.mm);
-				break;
-			case "ss":
-			case "SS":
-			case "S":
-				retVal = retVal.replace(fRes,td.ss);
-				break;
-			case "yyyy":
-			case "YYYY":
-				retVal = retVal.replace(fRes,td.YYYY);
-				break;
-			case "YY":
-				retVal = retVal.replace(fRes,td.YY);
-				break;
-			case "dd":
-			case "DD":
-				retVal = retVal.replace(fRes,td.DD);
-				break;
-			case "MM":
-				retVal = retVal.replace(fRes,td.MM);
-				break;
-			case "MMMM":
-				retVal = retVal.replace(fRes,td.MMMM);
-				break;
-			default: {
-				break;
-			};
-		}
-	}
-	return retVal;
-}
-
-// (c) trdm : trdmval@gmail.com 2017-11-17 14:52:19
-function myTemplaterF(selText) {
-	vSelText = selText.toLowerCase();
-	switch(vSelText){
-		case "datetime":
-		case "датавремя":
-			var Today = new Date();
-			selText = formatData(Today,'yyyy-MM-dd HH:mm:ss');
-			break;
-		case "time":
-		case "время":
-			var Today = new Date();
-			selText = formatData(Today,'HH:mm:ss');
-			break;
-		case "date":
-		case "дата":
-			var Today = new Date();
-			selText = formatData(Today,'yyyy-MM-dd');
-			break;
-		case "trdms": // простой trdm :)
-			var Today = new Date();
-			selText = "//trdm: " + formatData(Today,'yyyy-MM-dd HH:mm:ss');			
-			break;
-		case "trdm":
-			var Today = new Date();
-			selText = "//(c)trdm:trdmval@gmail.com " + formatData(Today,'yyyy-MM-dd HH:mm:ss');
-			break;
-		default: {
-				break;
-		};			
-	}
-	return selText;	
-}
-
-function myTemplateList() {
-	var tList = new Array();
-	tList.push("trdm","trdms","date","time","datetime","дата","время","датавремя");
-	word = selectValue(tList);
-	if (word !== 0) {
-		Editor.currentView.selection = word;
-	}
-}
-
-function myTemplater() {
-	//debugger;
-	var selText = Editor.currentView.selection;
-	selText = trim(selText);
-	selText = myTemplaterF(selText);
-	Editor.currentView.selection = selText;
-}
 ////////////////////////////////////////////////////////////////////////////////////////
 //{ StartUp
 
-var scriptsMenu = Editor.addMenu("Скрипты");
-jN.scriptsMenu = scriptsMenu;
+if (!jN.scriptsMenu){
+	var scriptsMenu = Editor.addMenu("Скрипты");
+	jN.scriptsMenu = scriptsMenu;
+} else {
+	scriptsMenu = jN.scriptsMenu;
+}
 
 // Виртуальные коды клавиш см. по ссылке: http://msdn.microsoft.com/en-us/library/dd375731(VS.85).aspx
-//{
-var myPutnoSwitcherItem = {
-    text: "Putno switcher\tF6", 
-    ctrl: false,
-    shift: false,
-    alt: false,
-    key: 0x75,
-    cmd: myPutnoSwitcher
-};
-
-addHotKey(myPutnoSwitcherItem);
-scriptsMenu.addItem(myPutnoSwitcherItem);
-
-var myTemplaterItem = {
-    text: "Templater\tShift+F12", 
-    ctrl: false,
-    shift: true,
-    alt: false,
-    key: 0x7B,
-    cmd: myTemplater	
-}
-addHotKey(myTemplaterItem);
-scriptsMenu.addItem(myTemplaterItem);
-
 	
 //}
 
@@ -496,9 +353,21 @@ var jumpBackItem = {
     cmd: jumpBack
 };
 
+
 /*System.*/addHotKey(jumpBackItem);
 scriptsMenu.addItem(jumpBackItem);
+var jumpBackItem2 = {
+    text: "Вернуться назад\talt+<-", 
+    ctrl: false,
+    shift: false,
+    alt: true,
+    key: 0x25,
+    cmd: jumpBack
+};
+addHotKey(jumpBackItem2);
+
 //} Вернуться назад
+scriptsMenu.addSeparator();
 
 // trdm {
 var gotoAnyHtmlTagItem = {
