@@ -10,13 +10,13 @@
 
 ### Intell.js,  функционал:
 
-- Подсказка по методам встроенных объектов и классов пользователя:
+Подсказка по методам встроенных объектов и классов пользователя:
 ![screenshot](https://github.com/trdm/jn-npp-scripts/blob/master/Doc/Intel_2.gif)
 
-- Подсказка по методам ActiveX - объектов.
+Подсказка по методам ActiveX - объектов.
 ![screenshot](https://github.com/trdm/jn-npp-scripts/blob/master/Doc/Intel_4.gif)
 
-- Механизм шаблонов:
+Механизм шаблонов:
 ![screenshot](https://github.com/trdm/jn-npp-scripts/blob/master/Doc/Intel_6T3.gif)
 
 Взять сам Notepad++ c установлеными скриптами можно в каталоге Bin: https://github.com/trdm/jn-npp-scripts/blob/master/Bin/NotepadPP.7z
