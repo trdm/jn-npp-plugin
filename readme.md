@@ -6,17 +6,13 @@ funclist.js, функционал:
 - Перейти к определению F12" 
 	Для javascript и vbscript позволяет перейти определению объекта на котором в тексте стоит курсор, 
 	будь то функция или переменная.
-![screenshot](https://github.com/trdm/jn-npp-scripts/blob/master/Doc/exam20180119_2.gif)
+
 
 Intell.js,  функционал:
-Подсказка по методам встроенных объектов и классов пользователя:
-![screenshot](https://github.com/trdm/jn-npp-scripts/blob/master/Doc/Intel_2.gif)
+- Подсказка по методам встроенных объектов и классов пользователя:
+- Подсказка по методам ActiveX - объектов.
+- Механизм шаблонов:
 
-Подсказка по методам ActiveX - объектов.
-![screenshot](https://github.com/trdm/jn-npp-scripts/blob/master/Doc/Intel_4.gif)
-
-Механизм шаблонов:
-![screenshot](https://github.com/trdm/jn-npp-scripts/blob/master/Doc/Intel_6T3.gif)
 
 Взять сам Notepad++ c установлеными скриптами можно в каталоге Bin: https://github.com/trdm/jn-npp-scripts/blob/master/Bin/NotepadPP.7z
 
