@@ -11,6 +11,9 @@
 	Дополнительная инфа:
 	http://www.forum.mista.ru/topic.php?id=474854 - Можно сделать подсказку по COM объектам?
 	http://rsdn.org/article/com/typeinfo.xml?print - Получение информации о COM-интерфейсах
+	
+	\todo 
+	Object = IHTMLElement.children - не опознает коллекцию. Грязный хак или?
 
 */
 require("lib/Window.js");
@@ -38,7 +41,7 @@ function checkLoger() {
 	var rv = true;
 	if(!gLoder) {
 		try { 
-			gLoder = new loger("intellOle");
+			gLoder = new CIntellLoger("intellOle");
 			gLoder.log("Логер скрипта: intelOle.js");	
         } catch(e) {
 			rv = false;
@@ -55,7 +58,9 @@ function writeToLog(psString) {
 }
 
 var IntellOle = {
-	MakeData : function(psProgID) {		return IntsGenerator(psProgID);	}
+	MakeData : function(psProgID) {		
+		return IntsGenerator(psProgID);	
+	}
 	, progIdIsDumped : function (psProgID) {
 		var rv = false;
 		var vProgID = psProgID;
@@ -119,14 +124,25 @@ function InStr(strSearch, charSearchFor){
 function Chr(psN) {	return String.fromCharCode(psN);}
 function appendArray ( psArray, psElement ) {psArray.push(psElement);}
 function LCase(psStr) {
-	var rv = psStr;
-	return rv.toLowerCase();
+	var rv = ''+psStr;
+	try { 		rv = rv.toLowerCase();
+    } catch(e) {
+    }
+	return rv;
 }
 function OstDel(Pa1, Pa2){ return (Pa1 % Pa2);	} 
 function Fix (psNum) {	return parseInt(psNum.toString());   	} //Fix(12.0050);
 function Replace(psStr1, psStr2, psStr3) {
 	var rv = psStr1;
-	return rv.replace(psStr2,psStr3);
+	try { 
+		rv = rv.split(psStr2).join(psStr3);
+    } catch(e) {
+		try { 
+			rv = rv.replace(new RegExp(psStr2,'g'),psStr3);
+        } catch(e) {
+        }
+    }
+	return rv;
 }
 // Вспомогашка, а то скриптинг-дикшионери возвращает не тот массив.
 function toJSArray(vbaarray){
@@ -198,7 +214,7 @@ function ITypeLib() {
 	this.LibPath = ""; //Имя библитеки
 	this.Library = 0;  //библитека (TypeLibInfo)
 	this.DefaultInterfaseName = "";  // интерфейс по умолчанию
-	this.ModeLValRepresent = 1; // 1 - Длинное представление, 2 - короткое, но тут мы рискуем нарваться на конфликт имен.
+	this.ModeLValRepresent = 2; // 1 - Длинное представление, 2 - короткое, но тут мы рискуем нарваться на конфликт имен.
 	this.ThisProgID  = ""; //ProgID библиотеки
 	this.ThisProgIDForIntel = "";  //ProgID библиотеки, преобразованный для OtherTypesDefine:  Excel.Application>>excel_application
 	
@@ -405,6 +421,8 @@ function ITypeLib() {
 			return retVal;
 		}
 		this.LibPath = Replace(this.LibPath,"/automation","");
+		this.LibPath = Replace(this.LibPath,'"','');
+		this.LibPath = Replace(this.LibPath,'\\','\\\\');
 		this.LibPath = trimSimple(this.LibPath);
 		
 		if (!gFSO.FileExists(this.LibPath)) {
@@ -465,7 +483,6 @@ function ITypeLib() {
 		if (Obj) {
 			try { 
 				DefaultInterfase = this.TLIApplication.InterfaceInfoFromObject(Obj);
-				ClassInfo = this.TLIApplication.ClassInfoFromObject(Obj); // InterfaceInfoFromObject - иногда возвращает не основной класс, а какой-то вспомогательный.		
             } catch(e) {
 				DefaultInterfase = '';
 				this.LibraryIsLoad = false;
@@ -473,6 +490,12 @@ function ITypeLib() {
 				SaveDumpedProgID(LCase(this.ThisProgID));
 				Message( "По прог-ид " + this.ThisProgID + " не удалось получить главного интерфейса");				
 				return false;
+            }
+			try { 
+				// InterfaceInfoFromObject - иногда возвращает не основной класс, а какой-то вспомогательный.
+				// Вывел отдельно, т.к. на объекте "InternetExplorer.Application" глючит безбожно
+				ClassInfo = this.TLIApplication.ClassInfoFromObject(Obj); 
+            } catch(e) {
             }
 
 			if ( DefaultInterfase ) {
@@ -503,6 +526,10 @@ function ITypeLib() {
 					return false;
                 }	
 			}
+			try { 
+				Obj.quit(); // Для IE
+            } catch(e) {
+            }
 			Obj = 0;
 		}
 		
@@ -747,7 +774,12 @@ function ITypeLib() {
         } catch(e) {
 			return;
         }
-		IntsFileName = gIntelDir2 + '\\' + this.MakeIName(Name)+".ints";
+		if(this.ModeLValRepresent == 1) {
+			IntsFileName = gIntelDir2 + '\\' + this.MakeIName(Name)+".ints";        
+        } else {
+			IntsFileName = gIntelDir2 + '\\' + Name+".ints";        
+		}
+		// IntsFileName = gIntelDir2 + '\\' + this.MakeIName(Name)+".ints";
 		if (gFSO.FileExists(IntsFileName)) { gFSO.DeleteFile(IntsFileName,true); }
 		var IntsFile = gFSO.CreateTextFile(IntsFileName);
 		status("Генерируем: " + IntsFileName);
@@ -794,6 +826,11 @@ function ITypeLib() {
 				} else {
 					vRetValTp = this.GetReturnedTypeStr( MemberInfo );
 					vStrForLVal = vRetValTp + vStrForLVal;
+					if('Object = IWebBrowser2.Document' == vStrForLVal) {
+						vStrForLVal = 'DispHTMLDocument = IWebBrowser2.Document';
+                    
+                    }
+					
 				} 
 				
 				IntsFile.WriteLine("0000 "+ Member.Name);
@@ -886,8 +923,8 @@ function ITypeLib() {
 	
 } //function ITypeLib() 
 
-// Ключевая процедура генерации 
-function IntsGenerator( ProgID ){
+//htmlfile = internetexplorer_application.Document
+function IntsGeneratorProxi(ProgID) {
 	var retVal = false;
 	if (ProgIDIsDumped( ProgID )) return false;
 	if (!IsProgID( ProgID ))  return false;
@@ -897,14 +934,26 @@ function IntsGenerator( ProgID ){
 	//debugger;
 	if (li.LoadLibrary( ProgID , true)) {
 		vStr = "#секция объектов "+ProgID;		li.DumpStringToFile(vStr,gFileNameLvalCommon);
+		vStr = ""+li.DefaultInterfaseName +' = '+ProgID;		li.DumpStringToFile(vStr,gFileNameLvalCommon);
 		retVal = true;
 		AllStrIterf = "";		//debugger;
-		li.DumpInterfaseObject(li.DefaultInterfaseName , AllStrIterf);
-		
-		
+		li.DumpInterfaseObject(li.DefaultInterfaseName , AllStrIterf);		
 	} else if (li.ErrorNumber != 0) {
 		//message ("Ошибка генерации файлов по прог-иду: " + li.ThisProgID, mExclamation);
 	}
+	return retVal;
+}
+
+// Ключевая процедура генерации 
+function IntsGenerator( ProgID ){
+	var retVal = IntsGeneratorProxi(ProgID);
+	var vProgID = ProgID;
+	vProgID = vProgID.toLowerCase();
+	if(vProgID == 'internetexplorer.application') {
+		// Они немного, чуть больше чем совсем связаны
+		retVal = IntsGeneratorProxi('htmlfile');
+    }
+	
 	return retVal;
 }
 
@@ -931,8 +980,10 @@ function TestLibrary() {
 // такую информацию, из-за того, что объект, созданный по прог-иду может быть опасен.
 
 function ComonGenerator( ) {
-	IntsGenerator( "MSXML2.DOMDocument" );
+	//IntsGenerator( "InternetExplorer.Application" );	
+	// htmlfile <= InternetExplorer.Application.Document
 	IntsGenerator( "Scripting.FileSystemObject" );
+	IntsGenerator( "MSXML2.DOMDocument" );
 	IntsGenerator( "ADODB.Connection" );
 	IntsGenerator( "WScript.Shell" );
 

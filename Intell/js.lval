@@ -43,6 +43,8 @@ Array = Array.slice()
 String = Array.join()
 Array = Array.concat()
 Array = Array.splice()
+Number = Array.length
+
 String = Date.toLocaleString()
 String = Date.toGMTString()
 String = Date.toLocaleFormat()
@@ -52,18 +54,65 @@ String = Date.toString()
 String = Date.toTimeString()
 String = Date.toDateString()
 String = Date.toUTCString()
+Date = Date.prototype
+Number = Date.getDate()
+Number = Date.getDay()
+Number = Date.getFullYear()
+Number = Date.getMilliseconds()
+Number = Date.getMinutes()
+Number = Date.getMonth()
+Number = Date.getSeconds()
+Number = Date.getTime()
+Number = Date.getTimezoneOffset()
+Number = Date.getUTCDate()
+Number = Date.getUTCDay()
+Number = Date.getUTCHours()
+Number = Date.getHours()
+Number = Date.getUTCMilliseconds()
+Number = Date.getUTCMonth
+Number = Date.getUTCMinutes()
+Number = Date.getUTCSeconds()
+Number = Date.getYear()
+Number = Date.setSeconds()
+Number = Date.setFullYear()
+Number = Date.setMilliseconds()
+Null = Date.setTime()
+Null = Date.setYear()
+Null = Date.setDate()
+Null = Date.setUTCDate()
+Null = Date.setUTCHours()
+Null = Date.setHours()
+Null = Date.setUTCMilliseconds()
+Null = Date.setUTCMinutes()
+Null = Date.setMinutes()
+Null = Date.setMonth()
+Null = Date.setUTCSeconds()
+Null = Date.setUTCFullYear()
+Null = Date.setUTCMonth()
+Date = Date.valueOf()
+Number = Date.getUTCFullYear()
+Date = Date.UTC()
+Date = Date.parse()
+
+
 String = Number.toExponential()
 String = Number.toString()
 NaN = Number.NaN
 String = Object.toString()
 Object = Object.prototype
 Array = Array.prototype
-Date = Date.prototype
 String = RegExp.toString()
 Array = RegExp.exec()
+
 Array = String.split()
 String = String.substr()
+Number = String.charCodeAt()
+String = String.fromCharCode()
+String = String.charAt()
 String = String.concat()
+Number = String.indexOf()
+Number = String.lastIndexOf()
+Number = String.search()
 Array = String.match()
 String = String.replace()
 String = String.slice()
@@ -73,6 +122,8 @@ String = String.toUpperCase()
 String = String.toLocaleLowerCase()
 String = String.toLocaleUpperCase()
 String = String.toString()
+String = String.valueOf()
+Number = String.length
 String = decodeURI()
 String = encodeURI()
 String = decodeURIComponent()
@@ -80,7 +131,7 @@ String = encodeURIComponent()
 Array = arguments
 
 #Секция DOM
-Array.HTMLElement = document.getElementsByTagName()
+#Array.HTMLElement = document.getElementsByTagName()
 
 
 

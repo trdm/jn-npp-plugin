@@ -1,5 +1,8 @@
 ﻿var gFso = new ActiveXObject("Scripting.FileSystemObject");
 var gTempPath = gFso.GetSpecialFolder(2)+'\\'; //alert(gTempPath);
+var gNjPluginDir = Editor.nppDir +"\\plugins\\jN\\";
+var gIntelDir = gNjPluginDir+"Intell\\";
+
 var gWshNetwork = new ActiveXObject("WScript.Network");
 var gComputerName = gWshNetwork.ComputerName;
 var gUserName = gWshNetwork.UserName;
@@ -70,11 +73,14 @@ function formatData(data, fmString) {
 }
 
 //trdm: 2018-01-24 12:35:48
-function loger(psLogName, psFolderPath) {
+function CIntellLoger(psLogName, psFolderPath) {
 	this.logName = psLogName;
 	this.logFolder = '';
 	this.logPath = ''; // Полный путь к файлу лога
 	this.setLogFolder = function(psFolderPath) {
+		if(!psFolderPath) {
+			psFolderPath = gIntelDir;
+		}
 		if(psFolderPath) {
 			if(psFolderPath == 1){ // Текущая директория, а как её у скрипта определить?
 				
@@ -132,5 +138,38 @@ function loger(psLogName, psFolderPath) {
 	}
 }  
 
-// var myLoger = new loger("simple");
-// myLoger.log("Тестовая запись в лог....");
+function tests() {
+	var myLoger = new CIntellLoger("Tests");
+	myLoger.log("Тестовая строка");
+}
+function test2() {
+	var dt = new Date;
+	dt.getHours();	
+}
+var gWshNetwork = new ActiveXObject("WScript.Network");
+
+function tests() {
+	gWshNetwork.ComputerName;
+	var dt = new Date;
+	dt.getHours();
+	return rv;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
