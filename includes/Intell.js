@@ -19,8 +19,8 @@
 	Спасибо им огромное!
 	---------------------------------------------------------------------
 	Скрипт: Intell.js, 
-	Версия: 0.1.0
-	Версия внутр.: $Revision: 0.51 $
+	Версия: 0.1.99
+	Версия внутр.: $Revision: 0.99 $
 	Автор: Трошин Дмитрий, trdmval@gmail.com, skype: trdmval
 	Поддержать проект: яндекс-кошелек 410015947831889
 	Функционал:
@@ -50,6 +50,15 @@
 		Это сэекономит время сканирования каталогов утилитой ctags, т.к. время сканирования может быть намалым.
 
 	todo/рулперы:
+	- Реализация шаблона "gFilesAlready(++|--|**|/|)" при вводе.
+	- [20181229020703] var sel = new ActiveXObject('Svcsvc.Service'); sel.|<<не подбирается
+	- WScript. - нет распознавания	
+	- [20190109103825] <table| => "<table>...</table>" > надо подавить реакцию для "<table" и оставить только table..
+	*/
+	
+	
+	/*
+
 	- [ok] Реализация шаблонов при вводе.
 	- [ok] Работа в скриптах *.js, *.vbs.
 	- [ok] Подсказка по методам и пропертям: 
@@ -66,7 +75,11 @@
 	- Требуемый в настоящий момент фраймверки можно глянуть тут: https://moikrug.ru/vacancies?skills%5B%5D=264
 	- ctags не берет: D:\Program Files\Notepad++\plugins\jN\_tests\dtree.js
 		C:\Progekts\_Utils\_Npp\__Intellisense\ExuberantCtags\src - компилябельная версия, можно патчить.
-	- https://docs.emmet.io/cheat-sheet/ - сокращения из эммета
+	
+	- emmet
+		https://docs.emmet.io/cheat-sheet/ - сокращения из эммета (emmet)
+		https://github.com/emmetio/npp#readme
+		
 	- https://cloud.githubusercontent.com/assets/11839736/16642200/6624dde0-43bd-11e6-8595-c81885ba0dc2.png  - автодополнение не по первым символам, а по вхождению.
 	- //todo - вводишь точку в коменте и идет ошибка.
 	
@@ -97,8 +110,12 @@ var gNjPluginLibDir = Editor.nppDir +"\\plugins\\jN\\lib\\";
 
 var gIntelDir = gNjPluginDir+"Intell\\";
 var gIntelCTagsUFPath = gNjPluginDir+"Intell\\u_ctagsU.txt";
+var gIntelCTagsUFPath2 = gNjPluginDir+"Intell\\u_ctagsU2.txt";
 var gIntelSystemDir = gNjPluginDir+"system\\";
-var gIntelCTagsUExeFPath = gIntelSystemDir+"\\ctagsU.exe";
+
+var gIntelCTagsUExeFPath = gIntelSystemDir+"ctagsU.exe";
+var gIntelCTagsUExeFPathSpeshl = gIntelSystemDir+"ctags.exe"; // для 1s, vbs
+
 var gIntelFileOTD = gIntelDir + "intell_otd.dict"; //"OtherTypesDefine.txt";
 var gCtagsMapLast = 0;
 var gIntelShowParseLine = true;
@@ -120,7 +137,10 @@ var gIntellCtagsScanMode = 0; // 0-извлекать include; 1-парсить 
 var gIntellCtagsScanModeMenuItem; 	// Элемент меню "Включить выключить сам интеллиценз"
 
 var gCurentCharAdded = 0; 			// Текущий добавленный символ.
-var gjN_ctags_ini = 'jN.ctags.ini'; // имя файла 'jN.ctags.ini'
+
+var gProjectRootFileName = 'ProjectRoot.ctag'; // имя файла для определения корня проекта для разбора исходников
+// стоит добавить команду в меню "Выбрать каталог проекта файла" и создавать там gProjectRootFileName
+var gjN_ctags_ini = 'jN.ctags.ini'; // имя файла 'jN.ctags.ini' // устарело
 var gCtagsjNProjectFile = 'project.projc'; // обычный ini-фал
 
 
@@ -157,13 +177,21 @@ function MsgBox() {
 	return rv;
 }
 
-function writeToIntellLog(psStr) {
-	if(gIntellDebug) { debugger; }
+function writeToIntellLog(psStr, psIncCIFn) {
+	//if(gIntellDebug) { debugger; }
+	if(arguments.length == 1) {
+		psIncCIFn = 1;
+    }
 	if(!gIntellLogger) {
 		gIntellLogger = new CIntellLoger('_intell');    
     }
 	var cFile = IntellPlus.curPathFile;
-	gIntellLogger.log(psStr+'; '+cFile);
+	var vSaveStr = psStr+'; ';
+	if(vSaveStr.indexOf(cFile) == -1 && psIncCIFn) {
+		// Иногда логируются операции с файлом и передается его полное имя, так что добавлять его еще раз не нужно.
+		vSaveStr = psStr +" "+ cFile;    
+    }	
+	gIntellLogger.log(vSaveStr);
 }
 
 
@@ -171,11 +199,41 @@ GlobalListener.addListener({
 	CHARADDED:function(v, pos){		// Tab не счистается символом? Не срабатывает функция..
 		if (gIntellEnabled){			//debugger;
 			gCurentCharAdded = v;
-			var curWord = getWordList();
-				 
+			var curWord = getWordList();				 
 		}		
 	}
 });
+
+function clearLogString(psStr) {
+	//debugger;
+	var vStr = psStr;
+	vStr = vStr.replace(';','');
+	var ara = vStr.split(' ');
+	if(ara.length >= 3 ) {
+		if(ara[1] == ara[2]) {
+			ara[2] = '';
+        }
+    }
+	vStr = ara.join(' ');
+	return vStr;
+}
+GlobalListener.addListener({
+	FILESAVED:function(){		// Tab не счистается символом? Не срабатывает функция..
+		var vString = 'FILESAVED: '+Editor.currentView.files[Editor.currentView.file]+" ";
+		vString = clearLogString(vString);
+		writeToIntellLog(vString,0);
+	}
+});
+
+GlobalListener.addListener({
+	FILEOPENED:function(){		// Tab не счистается символом? Не срабатывает функция..
+		var vString = 'FILEOPENED: '+Editor.currentView.files[Editor.currentView.file]+" ";
+		vString = clearLogString(vString);
+		writeToIntellLog(vString,0);
+	}
+});
+
+
 // 1 и 2 - комментарии, 1 - многострочный
 function curcorInComment(){
 	var rw = false;
@@ -229,7 +287,9 @@ function loadTemplatFromFile(psFileName) {
 	if(!vTextAll) {
     	return;
     }
+	// debugger;
 	var vTemplIdent = 'Template:';
+	var vTemplIdentL = 'TemplateLine:';
 	var templMap;
 	// Дикшионари не поддерживает в валуе дикшионери? Ну и хрен с тобой. Будем вставлять в него же, но вот так: lang+'.'+temlpId
 	vTextArr = vTextAll.split('TemplateEnd');
@@ -237,7 +297,27 @@ function loadTemplatFromFile(psFileName) {
 		vTextAll = vTextArr[i];
 		vTextAll = trimSimple(vTextAll);
 		vPos = vTextAll.indexOf(vTemplIdent);
-		if(vPos == -1) continue;		
+		if(vPos == -1) {
+			vPos = vTextAll.indexOf(vTemplIdentL);
+			if(vPos != -1) {
+				vTextAll = vTextAll.substring(vPos+vTemplIdentL.length);
+				var arr2 = vTextAll.split('\n');
+				for(i2 = 1; i2<arr2.length; i2++){
+					vTextLine = arr2[i2];
+					var arr3 = vTextLine.split(":");
+					vIdent = arr3[0]; //	"div"	String
+					vIdent = vIdent.toLowerCase(); // trdm 2018-12-21 18:01:34 
+					vTextAll = arr3[1]; //	"div"	String	" <div></div>"	String
+					try {
+						// gTemplatesFromLang.Add(lang+'.'+vIdent,vTextAll);
+						gTemplatesFromLang.Add(vIdent,vTextAll);
+					} catch(e) {
+						message('Ошибка при вставке "'+vIdent+'"! ');
+					}					
+				}            
+            }
+			continue;		
+		}
 		vTextAll = vTextAll.substring(vPos+vTemplIdent.length);
 		var arr0 = vTextAll.split('\n');
 		var vIdent = arr0[0];
@@ -251,7 +331,7 @@ function loadTemplatFromFile(psFileName) {
 			// gTemplatesFromLang.Add(lang+'.'+vIdent,vTextAll);
 			gTemplatesFromLang.Add(vIdent,vTextAll);
 		} catch(e) {
-			alert('Ошибка при вставке "'+vIdent+'"! ');
+			message('Ошибка при вставке "'+vIdent+'"! ');
 		}
 		vTextAll = vTextAll;
 	}
@@ -271,6 +351,7 @@ function loadTemplates() {
 	if(!gUsingTemplates) return;
 	checkTemplate();
 	if (gTemplatesFromLang) return;		//debugger;
+	var vTmplDir = gIntelDir + 'tmpl\\';
 	gTemplatesFromLang = new ActiveXObject("Scripting.Dictionary");
 	var lang = IntellPlus.curLang; // todo ctags!!!!	И еще ITypeLib, что-б её...................
 	fName = vTmplDir + '_common.tmpl';
@@ -278,10 +359,14 @@ function loadTemplates() {
     	loadTemplatFromFile(fName);
     }
 	var Today = new Date;
-	addToTemplatesFromLang('trdm','// trdm '+formatData(Today, 'yyyy-MM-dd hh:mm:ss '));
+	var vCommentChar = IntellPlus.getComentChar();
+	if(IntellPlus.curLang == 'vbs') {} // тут другой комментарий
+
+	
+	addToTemplatesFromLang('trdm',vCommentChar+" trdm "+formatData(Today, 'yyyy-MM-dd hh:mm:ss ')+'@ ');//+'@ ');
+	addToTemplatesFromLang('трдм',vCommentChar+" trdm "+formatData(Today, 'yyyy-MM-dd hh:mm:ss ')+'@ ');//+'@ ');
 	
 	if (lang == '') return;
-	var vTmplDir = gIntelDir + 'tmpl\\';
 	var fName = vTmplDir + lang + '.tmpl';
 	if (!gFso.FileExists(fName)) {		fName = vTmplDir +'_' +lang + '.tmpl';
 		if(!gFso.FileExists(fName)) {			fName = vTmplDir +'__' +lang + '.tmpl';
@@ -323,6 +408,7 @@ function onInsertTemplate() {
 	Editor.currentView.selection = vaLu;	
 }
 
+
 function isTemplate(psWord){
 	if(!gUsingTemplates) return '';
 	checkTemplate();
@@ -336,63 +422,116 @@ function isTemplate(psWord){
 		retVal = gTemplatesFromLang.Item(vWord);
 		return retVal;
 	}
+	// гд -> ul
+	try { 
+		vWord = reQuerty(vWord); // TemplaterF.js
+		if(gTemplatesFromLang.Exists(vWord)) {
+			retVal = gTemplatesFromLang.Item(vWord);
+			return retVal;
+		}
+    } catch(e) {
+    }
 	return retVal;	
+}
+// trdm 2018-12-23 10:29:47 
+function getCharCaretPos(psStartCol, psStartAnchor) {
+	var vCharCaret = "@";
+	var rv = psStartAnchor;
+	var vView = currentView;
+	// trdm 2018-12-23 10:45:25 
+	var vLine = vView.lines.get(vView.line-1).text; // отсчет с нуля начинается? 
+	vLine = vLine.replace('\t',"    ");
+	var vColChar = "";
+	var vCntr = 0;
+	for(var i = psStartCol; i<= vLine.length; i++) {
+		var vColChar = vLine.charAt(i); // 2 - это конец строки и сам символ.
+		vCntr++;
+		if(vColChar == vCharCaret) {
+			rv = rv + vCntr;
+			break;
+        }
+    }
+	return rv;
 }
 
 function insertTemplate() {
+	if(IntellPlus.debugMode()) {
+		debugger; // <<<< Вызов встроенного в ОС дебугера.
+    }
 	if(!gUsingTemplates) return false;
 	var rv = true;
-	var template = IntellPlus.template;
+	var vTemplate = IntellPlus.template;
 	var tPos = currentView.pos;
-	var re = /^([\s])+/;
+	var re = /^([\s])+/; // отступ
 	reRe = re.exec(IntellPlus.currentLineCl);
 	var vIndent = '';
 	if(reRe) {
 		vIndent = reRe[0];
 	}
-	var vTemplArr = template.split('\n');
+	var vTemplArr = vTemplate.split('\n');
 	for(var i = 1; i< vTemplArr.length; i++) {	
 		vTemplArr[i] = vIndent + vTemplArr[i];
 	} 
-	template = vTemplArr.join('\n');
+	vTemplate = vTemplArr.join('\n');
 	currentView.pos = tPos;
 	currentView.anchor = tPos-(1+IntellPlus.currentWord.length);
-	Editor.currentView.selection = template;
-	currentView.pos = tPos;
-	currentView.anchor = tPos;
+	var vStartCol = currentView.column - IntellPlus.currentWord.length;
+	var vStartAnchor = currentView.anchor;
+	var vPos3 = vTemplate.indexOf("@");
+	vTemplate = vTemplate.replace('@','');
+	var vPos4 = tPos;
+	if(vPos3 != -1) {
+		vPos4 = tPos + vPos3-(1+IntellPlus.currentWord.length);
+    }
+	Editor.currentView.selection = vTemplate;
+	currentView.pos = vPos4;
+	currentView.anchor = vPos4;
 	return rv;
 } 
 
-
+/* 
+\todo.... 2018-3-07_19-25
+	может не страдать херней, а для проектов на си и си++ использовать рекурсивные запуски типа:
+	ctags.exe -R -f u_ctagsU.txt --language=c --excmd=number
+	???? гораздо быстрее получается и гораздо точнее, что немаловажно..
+	
+// trdm 2019-02-14 08:05:07    
+\todo - при сканировании директории C:\Progekts\_E\ReactOS 
+	файл еквь.txt вырос до 80 мб. этот объем не осилить js.
+	тут надо придумать что-то другое.
+*/
 //Парсим с помощью ctagsU.exe файл
-function fileToCtags( psFileName, psFirst ) {
+function fileToCtags( psFileName, psFirst, psFIndex ) {
 	var vFName = psFileName;
 	if(!vFName) {
 		return;
 	}
-	/* todo.... 2018-3-07_19-25
-	может не страдать херней, а для проектов на си и си++ использовать рекурсивные запуски типа:
-	ctags.exe -R -f u_ctagsU.txt --language=c --excmd=number
-	???? гораздо быстрее получается и гораздо точнее, что немаловажно..
-	*/
+	if(!psFIndex) {		psFIndex = 1;    }
 	var vComandLine = '';
+	var ctagExePath = gIntelCTagsUExeFPath;
+	if(IntellPlus.curExtension == '1s' || IntellPlus.curExtension == 'vbs') {
+		ctagExePath = gIntelCTagsUExeFPathSpeshl;
+    }
+	var resFile = (psFIndex == 1) ? gIntelCTagsUFPath : gIntelCTagsUFPath2;
 	var isFolder = gFso.FolderExists(psFileName);
 	if(!isFolder) {
 		var vFirst = (psFirst) ? true : false;
 		var vFChar = (vFirst) ? '' : ' -a ';
 		if(!gFso.FileExists(vFName)) return;
-		if(!gFso.FileExists(gIntelCTagsUExeFPath)) return; 	// --if0=yes --list-fields - не обрабатывается
-		vComandLine = '"'+gIntelCTagsUExeFPath+'"'+vFChar+' -R -F --machinable=yes --if0=yes --list-fields --sort=no --excmd=number -f "'+gIntelCTagsUFPath+'" "'+vFName+'"';
-		vComandLine = '"'+gIntelCTagsUExeFPath+'"'+vFChar+' -R -F --machinable=yes --sort=no --excmd=number -f "'+gIntelCTagsUFPath+'" "'+vFName+'"';	// debugger;
+		if(!gFso.FileExists(ctagExePath)) return; 	// --if0=yes --list-fields - не обрабатывается
+		vComandLine = '"'+ctagExePath+'"'+vFChar+' -R -F --machinable=yes --sort=no --excmd=number -f "'+resFile+'" "'+vFName+'"';	// debugger;
+		if(psFIndex == 2) {
+			vComandLine = '"'+ctagExePath+'"'+vFChar+' -R -F --sort=no --excmd=number -f "'+resFile+'" "'+vFName+'"';	// debugger;
+        }
     } else {
-		vComandLine = '"'+gIntelCTagsUExeFPath+'" -R -F --machinable=yes --sort=no --excmd=number -f "'+gIntelCTagsUFPath+'" "'+vFName+'"';	// debugger;
+		vComandLine = '"'+ctagExePath+'" -R -F --machinable=yes --sort=no --excmd=number -f "'+resFile+'" "'+vFName+'"';	// debugger;
 	}
 	if(!gIntelShowParseLine) { 
 		status('Parse: '+vFName);	// var gWshShell = new ActiveXObject("WScript.Shell");
 	}
 	status('WshShell.Run: '+vComandLine);	// var gWshShell = new ActiveXObject("WScript.Shell");
 	gWshShell.Run(vComandLine,0,true);
-	return gFso.FileExists(gIntelCTagsUFPath);
+	return gFso.FileExists(resFile);
 }
 
 function getShortFileName(psFName){
@@ -403,7 +542,7 @@ function getShortFileName(psFName){
 function findByName(psArr, psName) {
 	var rv;
 	for(var i = 0; i<psArr.length; i++) {
-		var rv = psArr[i];
+		rv = psArr[i];
 		if(rv.name == psName) {
 			return rv;
 		}
@@ -569,7 +708,7 @@ function ScopeMap(sname){
 	this.makeTime = Date.UTC;
 	this.needUpdate = function(psFPath) {
     	var rv = false;
-		if((Date.UTC - this.makeTime) > 150) { 
+		if((Date.UTC - this.makeTime) > 150) { // не работает, исправить.
 			/* \todo
 			ну ваще так не годится, надо просто запомнить дату/время последнего сохранения скрипта и 
 			спросить, не изменились ли оне. Изменились - апдейтить. А еще лучше дополнительно спросить нотепад++ 
@@ -673,6 +812,83 @@ function ScopeMap(sname){
     }
 } // ScopeMap
 
+function getObjectListFromFileByCtags(psFileName) {
+	var rv = '';
+	if(gIntellDebug) { debugger;}
+	var vFExist = false;
+	status('getObjectListFromFileByCtags-Intell');
+	vFExist = fileToCtags(psFileName,true,2);
+	
+	if(!vFExist) return 0;
+	//todo - очень большой файл попадается, надо что-то придумать.
+	var vTextCtags = loadFromFile(gIntelCTagsUFPath2);
+	var vArrLines = vTextCtags.split('\n');
+	var cntAll = vArrLines.length;
+	var vPartLine = [];
+	var vName, vFile, vFileOld, vLileNo, vType, vOwner;
+	var vLine;
+	for(var iCntr = 0; iCntr<cntAll; iCntr++) {
+		vLine = vArrLines[iCntr];
+		vLine = trimSimple(vLine);
+		if(vLine == "") continue;
+		
+		if(vLine.substring(0,1) == '!') continue;
+		
+		vPartLine = vLine.split('\t');
+		vPartCnt = vPartLine.length;
+		vName = vPartLine[0];
+		vFile = vPartLine[1];
+		vLileNo = vPartLine[2];		
+		vLileNo = vLileNo.replace(';','').replace('"','');
+		vLileNo = parseInt(vLileNo);
+		vType = vPartLine[3];
+		if(vFileOld != vFile) {
+			vFileOld = vFile;
+			status('getObjectListFromFileByCtags-'+vFileOld);
+        }
+		// c-class, m-member, f-function, p-property(string) v-вариабла d-define
+		vOwner = vPartLine[4];
+		if(vOwner == 'file:') {
+			vOwner = '';
+		} else 	if(typeof(vOwner) == 'string') {
+			if(vOwner.indexOf('typeref:') != -1) {
+				vOwner = '';            
+			}			
+		}
+		if(vName.indexOf("__anon") != -1) {
+			continue;        
+        }	//vOwner	"struct:__anon6029f53e0108"	String
+		if(vOwner) {
+			try { 
+				if(vOwner.indexOf("__anon") != -1) {
+					continue;
+				}        
+            } catch(e) {
+				var yyy = 200;
+            }
+        }
+		var resStrTmp = '';
+		if (vOwner){
+			vPos = vOwner.indexOf(':');
+			if(vPos != -1) {
+				vOwner = vOwner.substring(vPos+1); // овнера то мы поймали, но сам овнер как правило идет внизу, т.е. непонятно какого он типа. Но! как правило это класс.
+				if(vType == 'm' || vType == 'f') resStrTmp = vOwner+':'+vName+'|'+vLileNo+'|f';
+				if(vType == 'p' || vType == 'v' || vType == 'e') resStrTmp = vOwner+':'+vName+'|'+vLileNo+'|v';
+            }			
+		} else {
+			if(vType == 'c' || vType == 'e' || vType == 't') {		resStrTmp = vName+'|'+vLileNo+'|c';
+			} else if(vType == 'm' || vType == 'f') {	resStrTmp = vName+'|'+vLileNo+'|f';
+			} else if(vType == 'v' || vType == 'd') {	resStrTmp = vName+'|'+vLileNo+'|v'; //sObj.		//d-define
+            }			
+		}
+		if(resStrTmp) {
+			rv += resStrTmp + '\n';
+        }
+		
+	}
+	return rv;
+}
+
 
 function makeScriptMapParseCtagsResult( psScriptFName ) {	// todo ctags!!!!		
 	if(gIntellDebug) { debugger;}
@@ -686,7 +902,8 @@ function makeScriptMapParseCtagsResult( psScriptFName ) {	// todo ctags!!!!
 			vFExist = fileToCtags(vFName,((i == 0) ? true : false));
         }		
     }
-	
+	// todo - для больших проектов сделать свой gIntelCTagsUFPath
+	// fixme - если проект большой N++ виснет.
 	if(!vFExist) return 0;
 	var vTextCtags = loadFromFile(gIntelCTagsUFPath);
 	var vArrLines = vTextCtags.split('\n');
@@ -724,8 +941,17 @@ function makeScriptMapParseCtagsResult( psScriptFName ) {	// todo ctags!!!!
 				vOwner = '';            
 			}			
 		}
-		if(vName.substring(0,6)	== "__anon") {
-			continue;
+		if(vName.indexOf("__anon") != -1) {
+			continue;        
+        }	//vOwner	"struct:__anon6029f53e0108"	String
+		if(vOwner) {
+			try { 
+				if(vOwner.indexOf("__anon") != -1) {
+					continue;
+				}        
+            } catch(e) {
+				var yyy = 200;
+            }
         }
 		var sObj = scopeMap.getScript(vFile);
 		if(0) {
@@ -762,6 +988,7 @@ function makeScriptMapParseCtagsResult( psScriptFName ) {	// todo ctags!!!!
 //trdm: 2017-12-24 20:51:04
 function switchIntellDebugMode(){
 	gIntellDebug = !gIntellDebug;
+	IntellPlus.intellDebug = gIntellDebug;
 	gSwitchDebugModeMenuItem.checked = gIntellDebug; // не пашет чекалка????
 	var vText = "ВЫключить";
 	var vTextStatus = "Выключить отладку Intell.js";
@@ -818,7 +1045,9 @@ function loadFromFile( psFileName) {
 		// если читается файл нулевого размера, тогда выдает ошибку...
 		var fl = gFso.GetFile(psFileName);
 		if(fl.Size){
-			rv = fl.OpenAsTextStream(1).ReadAll();
+			var vTs = fl.OpenAsTextStream(1)
+			rv = vTs.ReadAll();
+			vTs.Close(); // trdm 2018-08-27 10:28:49  - иначе файло просто блокировалось..
 		}
 	}	
 	return rv;
@@ -845,6 +1074,11 @@ function loadSettingth() {
 //trdm: 2017-12-23 20:47:42
 function trimSimple( psLine ) {	
 	var re = new RegExp("^[\\s]+|[\\s]+$", 'g');
+	return psLine.replace(re, '');
+}
+//trdm: 2017-12-23 20:47:42
+function trimRight( psLine ) {	
+	var re = new RegExp("[\\s]+$", 'g');
 	return psLine.replace(re, '');
 }
 // Отсечь строку по первый не буквенный символ
@@ -907,9 +1141,9 @@ function normaliseCW_needBreak(psAra, psNeedBr) {
 	}
 	return rv;
 }
-//"if(this.lineMap"  - не хорошо, надо подсчитать непарные скобки и убрать их
+//"if(this.lineMap"  - не хорошо, надо подсчитать непарные скобки и убрать их для определения типа выражения
 // "if(this.lineMap" >> 'this.lineMap'
-function normaliseCuretnWord(psCW) {
+function normalizeCurrentExpression(psCW) {
 	//debugger;
 	var arrBr = new Array;
 	var rv = '';
@@ -918,10 +1152,10 @@ function normaliseCuretnWord(psCW) {
 		var ch = psCW[i-1];
 		switch(ch) {
           case ')':  arrBr.unshift(ch);     break;
-          case '(': if(normaliseCW_needBreak(arrBr,')')) { nBreak = true;  break; }	break;
-          case '{': if(normaliseCW_needBreak(arrBr,'}')) { nBreak = true;  break; }	break;
+          case '(': if(normaliseCW_needBreak(arrBr,')')) { nBreak = true;  }	break;
+          case '{': if(normaliseCW_needBreak(arrBr,'}')) { nBreak = true;  }	break;
 		  case '}':  arrBr.unshift(ch);     break;
-          case '[': if(normaliseCW_needBreak(arrBr,']')) { nBreak = true;  break; }	break;
+          case '[': if(normaliseCW_needBreak(arrBr,']')) { nBreak = true;  }	break;
 		  case ']':  arrBr.unshift(ch);     break;
 		default:    
         }
@@ -930,29 +1164,34 @@ function normaliseCuretnWord(psCW) {
     }
 	return rv;
 }
-
-//normaliseCuretnWord("if(this.lineMap");
-
-
+// класс накопления и обработки информации для поиска методов текущего выражения
 var IntellPlus = {
 	  curChar : ""
 	, enabled: '' 		// активна технология
 	, startLineNo: '' 	// стартовая строка, номер.
+	, startColumnNo: '' 	// стартовая строка, номер.
+	, currentLineNo: '' // номер текущей проверенной строки, нужен, что-бы исключить повторное сканирование и зацикливание
 	, currentLine: '' 	// текущая строка
 	, curPathFile: '' 	// текущий файл полный путь
 	, curFileName: '' 	// текущий файл имя
 	, curDirPath: '' 	// текущая директорий
-	, currentLineNo: '' // номер текущей проверенной строки, нужен, что-бы исключить повторное сканирование и зацикливание
-	, currentWord: '' 	// текущая распознаваемое выражение
-	, curWordIsActiveX: false 	// текущая распознаваемое выражение
-	, curWordType: '' 	// текущая распознаваемое выражение
-	, currentLineCl: ''	// Чистая, для разбора
+	, currentWord: '' 	// текущее распознаваемое выражение
+	, curWordIsActiveX: false 	
+	, curWordType: '' 	// найденный тип текущего выражения
+	, currentLineCl: ''	// Чистая, для доп-разбора
 	, curExtension: '' 	// текущее расширение файла
-	, wordIsTemplate: '' 	// текущее расширение файла
-	, template: '' 	// текущее расширение файла
+	, wordIsTemplate: ''// выражение является шаблоном и хочет быть обработано :)
+	, template: '' 		// тело текущего шаблона для подстановки
 	, curLang: '' 		// язык для поиска. Понадобится когда будем работать во фрагментах html | php
-	, includedFileList: '' // список файлов включенных в html для разбора 
+	, hasBuiltInTypes: false// язык для поиска. Понадобится когда будем работать во фрагментах html | php
+	, includedFileList: '' // список инклюдов для разбора и поиска методов
+	, intellDebug : false // Для того, что-бы видеть в других скриптах
+	, prepareText : true // Подготавливать тексты
+	, prepareTextKCm : true // KC - KillComments Подготавливать тексты
 	// \todo - а если там ссылка на веб, типа https://www.google.com/js/jquery-1.9.1.min.js что делать то???
+	, debugMode : function(){
+		return this.intellDebug;
+	}
 	, clear : function(){
 		this.curWordIsActiveX = false;
 		this.currentLineNo = '';
@@ -960,10 +1199,34 @@ var IntellPlus = {
 		this.template = '';		
 		this.curChar = '';
 		this.currentWord = '';		
+		this.prepareText = true;
+		this.prepareTextKCm = true;		
+		var view = Editor.currentView;
+		this.currentLine = view.lines.get(view.line).text;
+		this.currentLineCl = this.currentLine;
+		this.startLineNo = view.line;
+		this.startColumnNo = view.column;
+
 	}
-	, isActiveX : function() {
-    	return this.curWordIsActiveX;
-    }
+	, isActiveX : function() {    	return this.curWordIsActiveX;    }
+	, isPhp : function () { 
+		var rv = false;
+		var vCurExtension = this.curExtension;
+		if(vCurExtension == 'php' || vCurExtension.indexOf('php') == 0) {
+			return true;
+		}
+		return false;
+	}
+	, getComentChar : function(){
+		var retVal = '//';
+		if(IntellPlus.curLang == 'vbs') {
+			retVal = "'";
+		} else if(IntellPlus.curLang == 'bat' || IntellPlus.curLang == 'cmd') {
+			retVal = "rem";
+        }
+		return retVal;
+	}
+
 	, getCurExtension : function(){
 		//todo. придумать как. Функция работает для целосных файлов. А для сегментных, HTML, PHP - не работает.
 		var retVal = "";
@@ -983,15 +1246,30 @@ var IntellPlus = {
 			this.curFileName = araFD[araFD.length-1];
 			araFD[araFD.length-1] = '';
 			this.curDirPath = araFD.join('\\');
+			this.curExtension = ext;
 		}
 		this.includedFileList = new Array;
 		this.curPathFile = curPathFile;
 		retVal = Editor.langs[view.lang];
 		retVal = retVal.toLowerCase();
-		if (ext == 'vbs') {
-			retVal = ext; // забывают про этот "язык". :)
-		}
-		this.curExtension = retVal;
+		// забывают про этот "язык". :)
+		if (ext == 'vbs') {			
+			this.hasBuiltInTypes = true;
+			retVal = ext; 
+			this.prepareText = false;
+			this.prepareTextKCm = true;
+		} else if(ext == '1s') { 
+			retVal = ext; 
+		} else if(ext == 'js') { 
+			this.hasBuiltInTypes = true;
+		} 
+		if(ext == 'html' || ext == 'htm' ) {
+			// проверить не стоит ли курсор в тексте между <script </script>
+			if(cursorInScriptByHtml(view.text)) {
+				retVal = 'js';            
+            }
+        }
+		retVal = retVal.toLowerCase();
 		this.curLang = retVal;
 		
 		return retVal;
@@ -1085,8 +1363,10 @@ var IntellPlus = {
 		retVal = line.substr(wordBegPos, wordEndPos - wordBegPos + 1);
 		retVal = trimSimple(retVal);
 		// retVal = "if(this.lineMap" - не хорошо, надо подсчитать непарные скобки и убрать их
-		retVal = normaliseCuretnWord(retVal);
+		retVal = normalizeCurrentExpression(retVal);
 		if (checkTemplate){
+			// html>js не отрабатывает trdm 2018-05-26 08:53:22 
+			this.currentWord = retVal;
 			retVal = this.isWordTemplate(retVal);
 			return retVal;
 			//ащк 
@@ -1114,6 +1394,9 @@ var IntellPlus = {
 					
 			}
 		}
+		if(retVal == '"') {
+			retVal = "";
+        }
 			
 		this.currentWord = retVal;
 		return retVal;		
@@ -1140,7 +1423,8 @@ function remoteCommentSLine_js(psAllText) {
 	var re; //= /(\/\/.*)/igm;
 	var re2 = ''; //= /(\/\/.*)/igm;
 	if(IntellPlus.curLang == 'vbs') {
-		re = /(\'.*)/igm;    
+		// посмотрим как будет себя вести без мультилайна.
+		re = /(\'.*)/ig;     //re = /(\'.*)/igm;    
     } else {
 		var cLang = IntellPlus.curLang;
 		switch(cLang) {
@@ -1163,7 +1447,7 @@ function remoteCommentSLine_js(psAllText) {
 			retVal = retVal.replace(fRes,'');
 			re = /(\/\/.*)/igm; // нужно переинициализировать почему? флаг?
 			if(IntellPlus.curLang == 'vbs') {
-				re = /(\'.*)/igm;    
+				re = /(\'.*)/igm;    // re = /(\'.*)/igm;    
 			}
 			reRe = re.exec(retVal);
 		}
@@ -1193,26 +1477,6 @@ function remoteAllComments( psText, psLang ) {
 	return psText;
 }
 
-function extractJSFromHtmlTextGetSrc(psScrTagProps, psReScript3) {
-	var rv = '';
-	var reRe = psReScript3.exec(psScrTagProps);
-	while(reRe) {
-		var tagName = reRe[1]; tagName = tagName.toLowerCase();
-		var tagSrc = reRe[2];
-		reRe = psReScript3.exec(psScrTagProps);
-		if(tagName == 'src') {
-			tagSrc = Replace(tagSrc,'/','\\');
-			if(tagSrc[0] == '\\') {
-				tagSrc = tagSrc.substring(1,tagSrc.length);
-            }
-			rv = tagSrc;
-			return rv;
-        }
-    	// break; continue;
-    }
-	return rv;	
-}
-
 function strDub(psStr, psCnt) {
 	var rv = '';
 	for(var i = 1; i<= psCnt; i++) {
@@ -1233,8 +1497,27 @@ function strCount(psSrcStr, psFindStr) {
 	return rv;
 } // strCount('onclick="ajax();return false false"',' ');
 
+
+function extractJSFromHtmlTextGetSrc(psScrTagProps, psReScript3) {
+	var rv = '';
+	var reRe = psReScript3.exec(psScrTagProps);
+	while(reRe) {
+		var tagName = reRe[1]; tagName = tagName.toLowerCase();
+		var tagSrc = reRe[2];
+		reRe = psReScript3.exec(psScrTagProps);
+		if(tagName == 'src') {
+			tagSrc = Replace(tagSrc,'/','\\');
+			if(tagSrc[0] == '\\') {
+				tagSrc = tagSrc.substring(1,tagSrc.length);
+            }
+			rv = tagSrc;
+			return rv;
+        }
+    	// break; continue;
+    }
+	return rv;	
+}
 function extractJSFromHtmlText( psText ) {
-	//debugger;
 	var rv = '', textFragment = '';
 	var reScript1 = /<script\s+([^>]*)>/ig; 			// <script type="text/javascript" src="dtree.js">
 	var reScript2 = /<\/script>/ig; 					// </script>
@@ -1249,7 +1532,7 @@ function extractJSFromHtmlText( psText ) {
 	var reRe2 = '';
 	while(reRe1) {
 		var tag = reRe1[1]; // какой скрипт? внешний или 
-		EditorMessageDT(tag);
+		//EditorMessageDT(tag);
 		var src = extractJSFromHtmlTextGetSrc(tag, reScript3);
 		if(src) {
 			vPathF = IntellPlus.curDirPath+src;
@@ -1270,13 +1553,46 @@ function extractJSFromHtmlText( psText ) {
 				textFragment = trimSimple(textFragment);
 				rv += otherText+textFragment;
 				rv += '\n'
-            }
-			
+            }			
 		}
 		//rv += tag+'\n';		
     	reRe1 = reScript1.exec(psText);
     }	
 	//alert(rv);
+	return rv;
+}
+
+// trdm 2018-05-26 17:03:50 
+function cursorInScriptByHtml( psText ) {
+	var rv = false;
+	var reScript1 = /<script\s+([^>]*)>/ig; 			// <script type="text/javascript" src="dtree.js">
+	var reScript2 = /<\/script>/ig; 					// </script>
+	var posTagScrStart = 0;
+	var posTagScrEns = 0;
+	var reRe1 = reScript1.exec(psText);
+	var reRe2 = 0;
+	var needDebug = false;
+	var curAnchor = Editor.currentView.anchor;
+	while(reRe1) {
+		var inText = reRe1[0];
+		var strLog = 're-1 index: ' + reRe1.index + ' lastIndex: '+reRe1.lastIndex;
+		reScript2.lastIndex = reRe1.lastIndex
+		reRe2 = reScript2.exec(psText); 
+		if(reRe2) { 
+			if(reRe1.lastIndex <= curAnchor && reRe2.index >= curAnchor) {
+				// Курсор находится vt;le ntufvb <script///> и  </script>
+				rv = true; 
+				break;
+            }
+		}
+		if(needDebug) {
+			if(reRe2) {
+				strLog += ' re-2: '+ ' index: ' + reRe2.index + ' lastIndex: '+reRe2.lastIndex;	
+			}
+			message(strLog);
+        }
+    	reRe1 = reScript1.exec(psText);
+    }
 	return rv;
 }
 
@@ -1286,10 +1602,18 @@ function extractJSFromHtmlText( psText ) {
 // PrepareModuleText(Line, Col) 
 function PrepareModuleText(Line, Col, psText) {
 	// возможно лучше взять часть текста, включая текущую строку.
+	if(IntellPlus.intellDebug) {
+		//debugger;
+    }
+	
 	var retVal = ""; 
 	var view  = Editor.currentView;	
 	if(psText) { retVal = psText;    
     } else { 	 retVal = view.text;	}
+	
+	if(!IntellPlus.prepareText) {
+		return retVal;
+    }
 	
 	if(IntellPlus.curLang == 'html') {
 		retVal = extractJSFromHtmlText(retVal);
@@ -1306,7 +1630,9 @@ function PrepareModuleText(Line, Col, psText) {
 			}
 		}
 	}
-	retVal = remoteAllComments(retVal);
+	if(IntellPlus.prepareTextKCm) {
+		retVal = remoteAllComments(retVal);
+    }
 	retVal = remoteOther(retVal);		
 	return retVal;
 }
@@ -1322,7 +1648,7 @@ function getBuiltInTypes(psCurLang, psCase) {
 	var retVal = new ActiveXObject("Scripting.Dictionary");
 	if(psCase == undefined) psCase = true; // все
 	var strToDict = '';
-	if(psCurLang == "js") {
+	if(psCurLang == "js" || psCurLang == "html") {
 		strToDict = 'Array,Boolean,Date,Error,EvalError,Function,Math,Number,Object,RangeError,ReferenceError,RegExp,String,SyntaxError,TypeError,URIError,window,document';
 		getBuiltInTypes_addTypes(retVal, strToDict);
 		//jN{ ну и раз програмим с помошью плагина jN, то и его типы встроить надо, хотя тут надо опционально разделять.
@@ -1330,6 +1656,9 @@ function getBuiltInTypes(psCurLang, psCase) {
 			strToDict = 'MenuItem,Menu,CtxMenu,Dialog,Library,CallBack,System,ViewLine,ViewLines,View,Editor';
 			getBuiltInTypes_addTypes(retVal, strToDict); 		
 		} //jN		
+	} else if (psCurLang == "vbs") {
+		strToDict = 'WScript';
+		getBuiltInTypes_addTypes(retVal, strToDict);
 	}
 	return retVal;	
 }
@@ -1340,7 +1669,7 @@ function fillLValDict(psText, psDict, psCase) {
 	if(!vText) return;
 	var vDictNu = new ActiveXObject("Scripting.Dictionary");
 	var arr = vText.split('\n');	
-	var tLine = "";	// debugger;
+	var tLine = "";	
 	for(i=0; i<arr.length; i++){
 		tLine = arr[i];
 		tLine = trimSimple(tLine);
@@ -1394,7 +1723,6 @@ function initLValDictions() {
 	if (!gJsLvalDict) {
 		var vFName = gIntelDir+'\\js.lval'; 
 		var vFName2 = gIntelDir+'\\_common.lval'; 
-		//debugger;
 		var vText = loadFromFile(vFName);
 		var vText2 = loadFromFile(vFName2);
 		vText = vText + '\n'+vText2
@@ -1409,9 +1737,7 @@ function initLValDictions() {
 
 function getTypeFromLval(psOneType, psMeth) {
 	var retVal = "";
-	if(!gJsLvalDict){
-		initLValDictions();
-	}
+	if(!gJsLvalDict){		initLValDictions();	}
 	var vMeth = psMeth;
 	if (!vMeth) {	// todo, плохо, не должно так быть
 		return;
@@ -1436,6 +1762,7 @@ function getInterfaceFromProgID( psProgId) {
 	var retVal = '';
 	vProgId = ''+psProgId;
 	vProgId = vProgId.toLowerCase();
+	if(!gJsLvalDict){		initLValDictions();	}
 	if(gJsLvalDict.Exists(vProgId)){
 		retVal = gJsLvalDict.Item(vProgId);
 	}
@@ -1507,6 +1834,12 @@ function checkActiveXDictionary() {
     }
 	return rv;
 }
+//
+function killApostroff(psStr) {
+	var rv = psStr;
+	while(rv.indexOf("'") != -1){		rv = rv.replace("'",'"');	}
+	return rv;
+}
 
 
 //trdm: Работа сразу со всем текстом не оправдана, надо разбирать построчно.
@@ -1540,6 +1873,8 @@ function getSimleType_js(psCurWord, psAllText) {
 	
 	paternNew = psCurWord+"\\s*\\=\\s*new\\s*([a-zA-Z_]+[0-9]?)"; //re = new RegExp(paternNew, 'img');
 	paternActive = psCurWord+'\\s*\\=\\s*new\\s*ActiveXObject\\(\\"([a-zA-Z_0-9\\.]+\\")\\)';  		//retVal = new ActiveXObject("Scripting.Dictionary");
+	// [20181229020703] var sel = new ActiveXObject('Svcsvc.Service') //< Ups
+	
 	if(curLang == 'vbs') {
 		paternActive = psCurWord+'\\s*\\=\\s*CreateObject\\s*\\(\\"([a-zA-Z_0-9\\.]+\\")\\)';  		//retVal = CreateObject("Scripting.Dictionary")
     }
@@ -1555,21 +1890,27 @@ function getSimleType_js(psCurWord, psAllText) {
 		reResu;
 		isChar = /[\w\dА-я$_]/; // только символы строк
 		if(curLang == 'vbs') {
-			reNew = 0;
+			// reNew = 0; // брехня-> Set vRewgExpr = New RegExp
 		}
 	} catch(e) {
 		vBadString = 'Ошибка при распознавании: '+ psCurWord+' строка: '+IntellPlus.currentLineNo;
 		status(vBadString);
 	}
-	
-	allText = allText.replace(';','\n'); // аукнется конечно, но ничего переивем
-	allText = allText.replace('\n\n','\n'); // аукнется конечно, но ничего переивем
+
+	if(gIntellDebug) {	debugger;	}	
+
+	if(IntellPlus.prepareText) {    
+		allText = allText.replace(';','\n'); // аукнется конечно, но ничего переивем
+		allText = allText.replace('\n\n','\n'); // аукнется конечно, но ничего переивем
+    } else {
+		IntellPlus.currentLineNo = IntellPlus.startLineNo;
+	}
 	var vTextLines = allText.split('\n');
 	var vTLLen = vTextLines.length-1; // Надо сканировать не с начала текста, а запоминать позицию. И почему я начинаю с верхней строки, вдруг кто-то пишет код слитно???
-	if(gIntellDebug) {	debugger;	}	
 	if(IntellPlus.currentLineNo == ''){
 		IntellPlus.currentLineNo = vTLLen;
 	} else { vTLLen = IntellPlus.currentLineNo - 1;}
+
 	for (var iL = vTLLen; iL>=0; iL-- ) {
 		if(gIntelShowParseLine) { status('Parse: '+iL+' line ');	 }
 		
@@ -1579,6 +1920,7 @@ function getSimleType_js(psCurWord, psAllText) {
 		tLine = trimSimple(tLine);
 		if (tLine == '') continue;
 		if (!/[\w\dА-я$_]/.test(tLine)) continue;
+		tLine = killApostroff(tLine);
 	
 		var reResu = '';
 		if(reNew) {
@@ -1643,7 +1985,7 @@ function getSimleType_js(psCurWord, psAllText) {
 	return retVal;
 }
 function getSimleType_jsOld(psCurWord, psAllText) {
-	if(gIntellDebug) {	debugger;	}	
+	if(gIntellDebug) {	/*debugger;*/	}	
 	var retVal = "";
 	var curLang = 'js';
 	var bi_types = getBuiltInTypes(curLang);
@@ -1707,15 +2049,47 @@ function getSimleType_jsOld(psCurWord, psAllText) {
 
 function getAtributesFromType(psTypeCWD, psCurWord) {
 	var retVal = "";
+	// смешанные языки. HTML+js
+	var cLang = IntellPlus.curLang;
+	var vifArray = new Array;
+	var fileName = gIntelDir + cLang+"_"+psTypeCWD+".ints";
+	vifArray.push(fileName);						// js_array.ints
+	vifArray.push(gIntelDir + psTypeCWD+".ints");	// array.ints
+	if(cLang == 'js' || cLang == 'html') {
+		if(psTypeCWD == 'document') {
+			vifArray.push(gIntelDir + "IHTMLDocument2.ints");	// IHTMLDocument2.ints
+        }
+    }
+	if(psTypeCWD.indexOf('.') != -1) {
+		fileName = psTypeCWD;
+		fileName = fileName.replace(".","_")+ ".ints"; // excel_application.ints
+		fileName = gIntelDir + fileName;
+		vifArray.push(fileName);	
+    }
+	// Иногда интерфейсы выливаются как I+имя интерфейса...
+	fileName = gIntelDir + 'i' + psTypeCWD + ".ints"; // htmlelement >> IHTMLelement.ints
+	vifArray.push(fileName);	
 	
-	var fileName = gIntelDir + IntellPlus.curLang+"_"+psTypeCWD+".ints";	// js_array.ints
+	for(var i = 0; i < vifArray.length; i++) {
+		fileName = vifArray[i];
+		retVal = loadFromFile(fileName);
+		if(retVal) {
+			break;
+        }
+    }
+	if(!retVal) {	
+		var vIFace = getInterfaceFromProgID(psTypeCWD);
+		if(vIFace) {
+			fileName = gIntelDir + vIFace+".ints";	// js_array.ints
+			retVal = loadFromFile(fileName);
+		}            
+	}
+	
+	/*
 	if (!(retVal = loadFromFile(fileName))){
 		fileName = gIntelDir + psTypeCWD+".ints";				// array.ints
 		if (!(retVal = loadFromFile(fileName))){
 			// excel.application >>> excel_application
-			fileName = psTypeCWD;
-			fileName = fileName.replace(".","_")+ ".ints"; // excel_application.ints
-			fileName = gIntelDir + fileName;
 			retVal = loadFromFile(fileName);
 			if(!retVal) {	
 				var vIFace = getInterfaceFromProgID(psTypeCWD);
@@ -1726,6 +2100,7 @@ function getAtributesFromType(psTypeCWD, psCurWord) {
             }
 		}
 	}
+	*/
 	if(gSortMetodsBefore>0 && retVal != ""){
 		// Cортировать методы и свойства переж выдачей: 0 - не сортировать, 1 - сортировать потоком; 2 - сортировать отдельно
 		var arrP = new Array;
@@ -1733,6 +2108,14 @@ function getAtributesFromType(psTypeCWD, psCurWord) {
 		var arr = retVal.split('\n');		
 		for(iLine = 0; iLine <arr.length; iLine++){
 			var vLine = arr[iLine];
+			vLine = trimSimple(vLine);
+			if(vLine.indexOf("#") == 0 || vLine.indexOf("//") == 0) {
+				// trdm 2018-05-02 18:18:54 - пропустим коменты				
+				continue;
+            } else if(vLine == "") {
+				continue;
+            
+            }
 			if (gSortMetodsBefore == 1) {
 				arrM.push(vLine);
 			} else {
@@ -1808,7 +2191,8 @@ function selectFromList(psStrList, psCurWord) {
 	var vCurWord = psCurWord; 
 	vCurWord = vCurWord + ".";
 	var spPross = false;
-	if(IntellPlus.curLang == "js") {
+	//if(IntellPlus.curLang == "js" || IntellPlus.curLang == "vbs") {
+	if(IntellPlus.hasBuiltInTypes) {
 		spPross = true;
 		var bi_types = getBuiltInTypes(IntellPlus.curLang,false); // Отсечку сделаем только по встроенным js типам. 
 		if(!bi_types.Exists(psCurWord)) {
@@ -1817,26 +2201,35 @@ function selectFromList(psStrList, psCurWord) {
 	}
 	strList = psStrList;
 	var arr = strList.split('\n');
+	var vDocLine = '';
 	var arr2 = new Array;
 	var tLine = "";
+	var vDocDict = new ActiveXObject("Scripting.Dictionary");
 	for(i=0; i<arr.length; i++){
+		vDocLine = '';
 		tLine = arr[i];
 		tLine = arr[i].substring(4);
 		tPos = tLine.indexOf("|"); // А надо окументацию убирать? Опционально?
-		if(tPos != -1) {			tLine = tLine.substring(0,tPos);		}
+		if(tPos != -1) {			
+			vDocLine = tLine.substring(tPos+1);
+			tLine = tLine.substring(0,tPos);	
+		}
 		tPos = tLine.indexOf(".");
 		if(spPross) {
 			if(vCurWord){			// строки, разделенные запятой, если там есть выражения psCurWord.[a-z], то брать только их и отсекать psCurWord.
 				tPos = tLine.indexOf(vCurWord);
 				if(tPos != -1) {
 					tLine = tLine.substring(vCurWord.length+1);
-				} else { continue;
 				}
 			} else {		    
 				if (tPos != -1) continue; // Методы/свойства, которые используются только с предопределенными литералами, типа "Number.MAX_VALUE" надо отсекать, если объект не встроенный тип.
 			}
         }
 		arr2[i] = tLine;
+		if(vDocLine != '') {
+			tLine = trimSimple(tLine);
+			vDocDict.Add(tLine,vDocLine);        
+        }
 	}
 	strList = arr2.join('\n');
     try   {        var sel = new ActiveXObject('Svcsvc.Service');    }
@@ -1850,6 +2243,13 @@ function selectFromList(psStrList, psCurWord) {
 		var wshShell = new ActiveXObject("WScript.Shell");
 		wshShell.sendKeys("{ESC}");
 	}
+	if(rv != "") {
+		if(vDocDict.Exists(rv)) {
+			vDocLine = vDocDict.Item(rv);
+			status(''+rv+" - "+vDocLine);
+        }
+    
+    }
 	return rv;
 }
 
@@ -1871,9 +2271,10 @@ function arrayPushUniStr(psAra, psStr) {
 
 /* строим список объектов для перехода к ним. Аналог funclist.js->listFunctions */
 //trdm: 2018-02-24 17:19:52  
+// бага - дефинишенз может быть не один, а семантически завязан на структуре инклюде ()
 function goToDefinitionsByCtagsGlobal(psCurScr, psFileName) {
 	var rerVal = false;
-	if(gIntellDebug) { debugger; }
+	if(gIntellDebug) { /*debugger;*/ }
 	
 	writeToIntellLog('goToDefinitionsByCtagsGlobal: '+ psCurScr);
 	
@@ -1887,9 +2288,9 @@ function goToDefinitionsByCtagsGlobal(psCurScr, psFileName) {
 		rv = gCtagsMapLast.getAllMembers(psFileName);
     }
 	if(rv) {
-		var addCaption = (psFileName) ? ' '+IntellPlus.curFileName : '';
+		var addCaption = (psFileName) ? ' '+IntellPlus.curFileName : '(all spase)';
 		if(!vOnlyCurScr) {
-			var objStr = selectFromString(rv, 'Переход к объекту'+addCaption);
+			var objStr = selectFromString(rv, 'Переход к объекту: '+addCaption);
         } else {
 			objStr = psCurScr;
 		}
@@ -2035,7 +2436,6 @@ function getIncludedFileNamesFromText( psText, psFileNmArray, psLavel) {
 	case 'c':
 	case 'cpp':
 	{
-		//debugger;
 		status('Searche include: ...');
 		var allText = psText;
 		var regExpr = /#include\s+([<>\\"a-zA-Z.]+)/g;		
@@ -2158,7 +2558,12 @@ function getThisScopeFiles(psFName){
 	var rv = new Array;
 	var vFName = psFName;
 	rv.push(vFName);
-	var vFile = gFso.GetFile(psFName);
+	try { 
+		var vFile = gFso.GetFile(psFName);
+    } catch(e) {
+		status("file: '"+psFName+"' - not found!");
+		return rv;
+    }
 	var vFolder = vFile.ParentFolder.Path; 
 	vFolder += '\\';
 	//if(vFName.indexOf(gNjPluginDir) != -1) {
@@ -2177,8 +2582,6 @@ function getThisScopeFiles(psFName){
 		var cLang = IntellPlus.curLang;
 		cLang = cLang.toLowerCase();
 		var vText = '';
-		//rv.push(IntellPlus.curPathFile);
-		//debugger;
 		getIncludedFileNamesFromText(vText,rv,1);
 	}
 	rv.sort();
@@ -2187,25 +2590,26 @@ function getThisScopeFiles(psFName){
 
 function ctagsjNProjectFile_find(psCurFilePath) {
 	var rv = '';
-	// debugger;
 	if(gFso.FileExists(psCurFilePath)) {
 		var vFile = gFso.GetFile(psCurFilePath);
 		var vFolder = vFile.ParentFolder;
-		var vFPath = vFolder.Path +'\\'+ gjN_ctags_ini;
+		var vFPath = vFolder.Path +'\\'+ gProjectRootFileName;
 		for(var i = 1; i<= strCount(vFPath,'\\'); i++) {
 			if(gFso.FileExists(vFPath)) {
 				rv = vFPath;
 				break;
             }
 			vFolder = vFolder.ParentFolder;
-			vFPath = vFolder.Path +'\\'+ gjN_ctags_ini;			
+			vFPath = vFolder.Path +'\\'+ gProjectRootFileName; //gjN_ctags_ini;			
         }		
     }
 	return rv;
 }
 
 function checkUpdateScopeMapCtags() {
-	if(gIntellDebug) { debugger; }  
+	if(gIntellDebug) { 
+		//debugger; 
+	} 		
 	var needSm = false;
 	
 	if(0) { gCtagsMapLast = new ScopeMap('');       }
@@ -2220,7 +2624,8 @@ function checkUpdateScopeMapCtags() {
 				// дохрена в некоторых случаях, лучше парет фолдер1 2018-03-30 20:26:37 
 				//vFolder = vFile.ParentFolder.ParentFolder.Path;
             }
-			var vjN_ctags_iniFPath = ctagsjNProjectFile_find(IntellPlus.curPathFile);
+			// Ищем gProjectRootFileName
+			var vjN_ctags_iniFPath = ctagsjNProjectFile_find(IntellPlus.curPathFile); 
 			vArrFilePath = vFolder;
 			if(vjN_ctags_iniFPath) {
 				vFile = gFso.GetFile(vjN_ctags_iniFPath);
@@ -2238,7 +2643,9 @@ function checkUpdateScopeMapCtags() {
 function getMembersFromCtags() {
 	var rv = '';
 	// возможно имеем лело с переменной, объявленной как var curWord = {} или с классом, возвращаемыйм функцией.			
-	if(gIntellDebug) { debugger; }
+	if(gIntellDebug) { 
+		//debugger; 
+	}
 	var vFName = IntellPlus.curPathFile;
 	var vArrFilePath = getThisScopeFiles(vFName);
 	checkUpdateScopeMapCtags();
@@ -2290,6 +2697,7 @@ function getMethodsForThis(psPosS, psPosE){
         }
 		reRe = reThis.exec(vTextBetween);
 	}	
+	
 	return rv;
 }
 
@@ -2297,13 +2705,14 @@ function getMethodsForThis(psPosS, psPosE){
 
 /*	UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU
 	Основная процедура запуска скрипта. Обеспечивает распознавание возможности коде-комплита, 
-	парсинг, выбор вваринта и встравку результата во view. -_-
-*/
+	парсинг, выбор вваринта и встравку результата во view. -_- */
 function getWordList() {
- 	if(gIntellDebug) {debugger;}	
+ 	if(gIntellDebug) {
+		debugger;
+	}	
 	gSearchCount = 0;
 	var retVal = '';
-	var curWord = IntellPlus.getCurWord(); 
+	var curWord = IntellPlus.getCurWord(); 	
 	if (!curWord) { /*insertTemplate();*/ return; }
 	writeToIntellLog('getWordList fore: '+ curWord);
 	var cLang = IntellPlus.curLang;
@@ -2490,7 +2899,9 @@ var myTabCatcher = {
     key: 0x09, // "Tab"    //cmd: getWordListTab
     cmd: tryInsertTemplate //   cmd: insertTab
 }
-addHotKey(myTabCatcher); scriptsMenu.addItem(myTabCatcher);
+// trdm 2018-04-01 16:13:14 
+// плохая идея как оказалось. т.к. теряется возможность идентить и реидентить ВЫДЕЛЕННЫЙ код, что само по себе ценная вещm.
+//addHotKey(myTabCatcher); scriptsMenu.addItem(myTabCatcher);
 
 
 var mySwitchIntellMode = {

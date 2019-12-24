@@ -9,23 +9,53 @@ function trim( str, charlist ) {	// Strip whitespace (or other characters) from 
 	var re = new RegExp("^[\\s]+|[\\s]+$", 'g');
 	return str.replace(re, '');
 }
+
+function reQuerty(psString) {
+	var rv = psString;
+	var en_crs = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM";
+	var ru_crs = "йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ";
 	
-// undefinedundefinedundefinedundefinedundefined: 2018-01-16 23:15:29 
-function myPutnoSwitcher() {
-	//debugger;
-	var selText = Editor.currentView.selection;
-	var en = " qwertyuiop[]asdfghjkl;'zxcvbnm,..QWERTYUIOP[]ASDFGHJKL;'ZXCVBNM,./";
 	var ru = " йцукенгшщзхъфывапролджэячсмитьбю.ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ.";
-	var word = "";
-	for (i = 0; i<selText.length; i++ ) {
-		cChar = selText.charAt(i);
-		pos = en.indexOf(cChar);
+	var en = " qwertyuiop[]asdfghjkl;'zxcvbnm,..QWERTYUIOP[]ASDFGHJKL;'ZXCVBNM,./";
+	
+	var conv_fr = en;
+	var conv_to = ru;
+	
+	var lenMin = en_crs.length;
+	if(lenMin > ru_crs.length) {
+		lenMin = ru_crs.length;
+    }
+	
+	for (i = 0; i<rv.length; i++ ) {
+		cChar = rv.charAt(i);
+		pos = ru_crs.indexOf(cChar);
 		if (pos != -1) {
-			cChar = ru[pos];
+			conv_fr = ru;
+			conv_to = en;
+			break;
+		}		
+    }
+	var word = "";
+	for (i = 0; i<rv.length; i++ ) {
+		cChar = rv.charAt(i);
+		pos = conv_fr.indexOf(cChar);
+		if (pos != -1) {
+			cChar = conv_to[pos];
 		}
 		word = word + cChar; 
 	}
-	Editor.currentView.selection = word;
+	
+	return word;
+}
+ 
+	
+// undefinedundefinedundefinedundefinedundefined: 2018-01-16 23:15:29 
+// 'Ghbdtn' >> "Привет" или "Привет" >> "Ghbdtn" в зависимости от первых букв
+function myPutnoSwitcher() {
+//debugger;
+	var selText = Editor.currentView.selection;
+	selText = reQuerty(selText);
+	Editor.currentView.selection = selText;
 }
 
 var myPutnoSwitcherItem = {

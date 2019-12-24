@@ -389,7 +389,9 @@ function ITypeLib() {
 		File.Close();
 	}
 
-	this.SaveDumpedProgID = function( DumpedProgID ) {		this.DumpStringToFile(DumpedProgID, gFileNameProgIDDumped);	}
+	this.SaveDumpedProgID = function( DumpedProgID ) {		
+		this.DumpStringToFile(DumpedProgID, gFileNameProgIDDumped);	
+	}
 	this.DMessage = function( mess ) {		if (this.DebugFlag) {			Message( mess );		}	} 
 	
 	this.CheskClass = function() { //Проверим клас, как он инициализировался...
@@ -416,7 +418,7 @@ function ITypeLib() {
 		this.LibPath = GetPathFromProgID ( ProgID );
 		if (!this.LibPath) {
 			this.ErrorNumber = 1;
-			SaveDumpedProgID(LCase(this.ThisProgID));
+			this.SaveDumpedProgID(LCase(this.ThisProgID));
 			Message( "Прог-ид " + this.ThisProgID + " не найден в реестре и помечен как обработанный для исключения повторной генерации.");
 			return retVal;
 		}
@@ -424,10 +426,13 @@ function ITypeLib() {
 		this.LibPath = Replace(this.LibPath,'"','');
 		this.LibPath = Replace(this.LibPath,'\\','\\\\');
 		this.LibPath = trimSimple(this.LibPath);
+		var vSysFolder = gFSO.GetSpecialFolder(0).Path;
+		this.LibPath = Replace(this.LibPath,'%SystemRoot%',vSysFolder); // "%SystemRoot%\\system32\\SHELL32.dll"
 		
 		if (!gFSO.FileExists(this.LibPath)) {
 			this.ErrorNumber = 1;
-			SaveDumpedProgID(LCase(this.ThisProgID));
+			var vLcasePI = LCase(this.ThisProgID);
+			this.SaveDumpedProgID(vLcasePI);
 			Message( "Прог-ид " + this.ThisProgID + "Нет файла:" + this.LibPath	);
 			this.LibPath = '';
 		}
@@ -458,7 +463,7 @@ function ITypeLib() {
 			vStrQuestion = "Пометить объект '"+ProgID+"' как обработанный?\nПо помеченным объектам генерация не производится.";
 			vMyAnswer = MyConfirm(vStrQuestion, 4, "OLE-ActiveX *.ints Generator");
 			if (vMyAnswer == 1) {
-				SaveDumpedProgID(LCase(this.ThisProgID));
+				this.SaveDumpedProgID(LCase(this.ThisProgID));
 				this.ErrorNumber = 1
 			}
 			return retVal;
@@ -472,7 +477,7 @@ function ITypeLib() {
 			retVal = false;
 			this.LibraryIsLoad = false;
 			this.ErrorNumber = 1;
-			SaveDumpedProgID(LCase(this.ThisProgID));
+			this.SaveDumpedProgID(LCase(this.ThisProgID));
 			Message( "По прог-ид " + this.ThisProgID + " создать объект не удалось");
 			return retVal;
         }
@@ -487,7 +492,7 @@ function ITypeLib() {
 				DefaultInterfase = '';
 				this.LibraryIsLoad = false;
 				this.ErrorNumber = 1;
-				SaveDumpedProgID(LCase(this.ThisProgID));
+				this.SaveDumpedProgID(LCase(this.ThisProgID));
 				Message( "По прог-ид " + this.ThisProgID + " не удалось получить главного интерфейса");				
 				return false;
             }
@@ -521,7 +526,7 @@ function ITypeLib() {
                 } catch(e) {					
 					this.LibraryIsLoad = false;
 					this.ErrorNumber = 1;
-					SaveDumpedProgID(LCase(this.ThisProgID));
+					this.SaveDumpedProgID(LCase(this.ThisProgID));
 					Message( "По прог-ид " + this.ThisProgID + " информацию из библиотеки типов..");					
 					return false;
                 }	

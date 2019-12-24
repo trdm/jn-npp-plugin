@@ -8,15 +8,25 @@ function timeAddition()
 	var selText = "15, 2.20, 20, 25";// Editor.currentView.selection;
 	selText = Editor.currentView.selection;
 	selText = selText.replace("+",",");
+	while(selText.indexOf("+")!= -1) {
+		selText = selText.replace("+",",");
+    	// break; continue;
+    }
 	var arr = new Array;
 	arr = selText.split(",");
-	//debugger;
+//debugger;
 	
 	var result = 0;
 	var tmS = "";
 	var i = 0;
 	var parseRes = 0;
+	var itemN = 0;
 	for (i = 0; i<arr.length; i++ ) {
+		itemN = arr[i];
+		itemN = itemN.replace(/\s+/,'');
+		if(itemN == "") {
+			continue;
+        }
 		tmS = arr[i].split(".");
 		if (tmS.length == 1) {
 			parseRes = parseInt(tmS[0]);
@@ -26,7 +36,7 @@ function timeAddition()
 		} else {
 			parseRes = parseInt(tmS[0])*60 + parseInt(tmS[1]);
 		}
-		result +=  parseRes;
+		result +=  0 + parseRes;
 	}
 	if (result <= 0) {
 		alert("Нужно выделить числа, типа: 15, 2.45, 20, 25")
@@ -59,6 +69,296 @@ var myTimeAdditionItem = {
 };
 scriptsMenu.addSeparator();
 addHotKey(myTimeAdditionItem); scriptsMenu.addItem(myTimeAdditionItem);
+
+function typeSymbol( psSymb ) {	Editor.currentView.selection = psSymb; }
+function addHotSym(psFu, psKey) {
+	var rv = {
+		ctrl: false,
+		shift: false,
+		alt: true,
+		key: psKey, // "I"
+		cmd: psFu
+	};
+	addHotKey(rv);	
+}
+
+// Ввоод символов в русской раскладке схема Alt+' >> ' ; Alt+$ >> $. Можно не переключать раскладку.
+function typeSymbol_1() {	typeSymbol( '<' );} addHotSym(typeSymbol_1,0xBC);
+function typeSymbol_3() {	typeSymbol( '\'' );} addHotSym(typeSymbol_3,0xDE);
+function typeSymbol_2() {	typeSymbol( '>' );} addHotSym(typeSymbol_2,0xBE);
+function typeSymbol_4() {	typeSymbol( '~' );} addHotSym(typeSymbol_4,0xC0);
+function typeSymbol_5() {	typeSymbol( '$' );} addHotSym(typeSymbol_5,0x34);
+
+function calcNoWhiteSpaceSymbolsCount() {
+	//debugger;
+	var rv = 0;
+	var text = Editor.currentView.text;
+	var lenOld = text.length;
+	while(text.indexOf(' ') != -1) {
+    	text = text.replace(' ', '');
+    }
+	var lenNew = text.length;
+	view = Editor.currentView;
+	curPathFile = view.files[view.file];
+	
+	var messStr = ''+curPathFile+'\nLength with space: '+lenOld+' ch. \nLength without space: '+lenNew +' ch.';
+	message(messStr);
+	alert(messStr);	
+	return rv;
+}
+
+var myLengthCounterProc = {
+    text: "Length counter\tCtrl+Shift+N", 
+    ctrl: true,
+    shift: true,
+    alt: false,
+    key: 0x4E, // "I"
+    cmd: calcNoWhiteSpaceSymbolsCount	
+}
+
+//scriptsMenu.addSeparator();
+addHotKey(myLengthCounterProc); 
+scriptsMenu.addItem(myLengthCounterProc);
+
+function translateString(psStr, psCase) {
+	var rv = psStr;
+	return rv;
+}
+var qChar = {
+	m_char : '' //данные
+	, init : function(psChar) {
+		this.m_char = psChar;
+	}
+	, isDigit : function(psChar){
+		var ch = psChar;
+		if(!ch) {
+			ch = this.m_char;        
+        }
+		if(ch.length != 1) {
+			return false;        
+        }
+		ch = ch.charAt(0);
+		if('0' >= ch && '9' <= ch ) {
+			return true;
+        }
+		return false;        
+		
+	}
+	, isLower : function(psChar) {
+		var rv = false;
+		var vLine = psChar;
+		vLine = trimSimple(vLine);
+		if(vLine.length == 0) {
+			return false;
+        }
+		var ch1 = vLine.charAt(0);
+		var ch2 = ch1;
+		ch2 = ch2.toUpperCase();
+		if(ch1 != ch2) {
+			rv = true;
+        }
+		return rv;
+	}
+	, isUpper : function(psChar) {
+		var rv = false;
+		var vLine = psChar;
+		vLine = trimSimple(vLine);
+		if(vLine.length == 0) {
+			return false;
+        }
+		var ch1 = vLine.charAt(0);
+		var ch2 = ch1;
+		ch2 = ch2.toLowerCase();
+		if(ch1 != ch2) {
+			rv = true;
+        }
+		return rv;
+	}
+}
+
+// Ctrl+Shift+A - свободен
+function MergeLinesIntoParagraphs() {
+	var rv = '';
+	if(IntellPlus.debugMode()) { debugger;    }
+	
+	var curView = Editor.currentView;
+	var selText = curView.selection;
+	var newSelText = selText;
+	if(selText.length == 0) {
+		return;
+    }
+	var selTextAra = selText.split('\n');
+	var vLine = '';
+	var vChar = '', vCharU = '';
+	var vbNewLine = false;
+	for(var i = 0; i< selTextAra.length; i++) {
+		vLine = selTextAra[i];
+		vLine = trimSimple(vLine);
+		vLine = vLine.replace('\r','');
+		if(i == 0) {
+			newSelText = vLine;
+			continue;
+        }
+		vLine = trimRight(vLine);
+		if(vLine.length == 0) {
+			continue;        
+        }
+		
+		vbNewLine = false;
+		
+		vChar = vLine.charAt(vLine.length - 1);
+		if(vChar == '.' || vChar == ';') {
+			newSelText += " ";
+			newSelText += vLine;
+			if(i < selTextAra.length-1) {
+				newSelText += '\n';
+            }
+        } else {
+			newSelText += " ";
+			newSelText += vLine;
+		}
+		
+    }
+	newSelText += '\n';
+	//newSelText = "" + vCbArray[0] + selText + vCbArray[1];
+	if(curView.selection != newSelText) {
+		curView.selection = newSelText
+    }
+	return rv;
+	
+
+/** Объедините строки в абзацы. >> Merge lines into paragraphs.
+        txt_end = txt;
+        QStringList list = txt_end.split("\n");
+        int cnt = list.count();
+        QString resStr, curStr;
+        QChar charItem;
+        bool newLine = false;
+
+        if (cnt > 0) {
+            resStr = list.at(0);
+            for (int i=1; i<cnt; i++){
+                curStr = list.at(i);
+                newLine = false;
+
+                if (curStr.length()>0){
+                    charItem = curStr.at(0);
+                    newLine = charItem.isDigit() || charItem.isSpace() || (charItem.isLetter() && charItem.isUpper());
+                }
+                if (newLine){
+                    resStr.append("\n");
+                } else {
+                    resStr.append(" ");
+                }
+                resStr.append(curStr);
+            }
+        }
+
+*/	
+}
+
+var myMergeLinesIntoParagraphs = {
+    text: "Объедините строки в абзацы\tCtrl+Shift+A", 
+    ctrl: true,
+    shift: true,
+    alt: false,
+    key: 0x41, // "I"
+    cmd: MergeLinesIntoParagraphs	
+}
+
+//scriptsMenu.addSeparator();
+addHotKey(myMergeLinesIntoParagraphs); 
+scriptsMenu.addItem(myMergeLinesIntoParagraphs);
+
+// trdm 2019-10-19 18:20:37  
+function processAllTextRule001() {	
+	var curView = Editor.currentView;
+	var vAllText = curView.text;	
+	var vArrLines = vAllText.split('\n');
+	vAllText = '';
+	var vLine = '';
+	for(var i = 0; i<vArrLines.length; i++) {
+		vLine = vArrLines[i];
+		vLine = trimSimple(vLine);
+		if(vLine.length == 0) {
+			continue;
+        }
+		if(vAllText.length == 0) {
+			vAllText = vLine;
+        } else {
+			vAllText = vAllText + ' > '+ vLine;
+		}		
+    }
+	if(vAllText.length > 0) {
+		curView.text = vAllText;
+    }
+}
+
+var myProcessAllTextRule001 = {
+    text: "Объединить текст в строку \tCtrl+Shift+P", 
+    ctrl: true,
+    shift: true,
+    alt: false,
+    key: 0x50, // "P"
+    cmd: processAllTextRule001	
+}
+
+//scriptsMenu.addSeparator();
+addHotKey(myProcessAllTextRule001); 
+scriptsMenu.addItem(myProcessAllTextRule001);
+
+// trdm 2019-12-17 11:10:32 
+function filterTextBySelection() {	
+	var curView = Editor.currentView;
+	var vAllText = curView.text;	
+	var vSelectionTxt = Editor.currentView.selection;
+	if(vSelectionTxt.length == 0) {
+		return;
+    }
+	/*
+	alert(vSelectionTxt);
+	return; 
+	*/
+	
+	var vArrLines = vAllText.split('\n');
+	
+	vAllText = '';
+	var vLine = '';
+	for(var i = 0; i<vArrLines.length; i++) {
+		vLine = vArrLines[i];
+		vLine = trimSimple(vLine);
+		if(vLine.length == 0) {
+			continue;
+        }
+		if(vLine.indexOf(vSelectionTxt) == -1) {
+			continue;
+        }
+		vLine += '\n';
+		vAllText = vAllText + vLine;
+    }
+	if(vAllText.length > 0) {
+		curView.text = vAllText;
+    }
+	message('Filter text by selection: "'+vSelectionTxt+'"');
+
+}
+
+
+
+var myfilterTextBySelection= {
+    text: "Отфильтровать текст по выделению \tCtrl+Shift+L", // L
+    ctrl: true,
+    shift: true,
+    alt: false,
+    key: 0x4C, // "L"
+    cmd: filterTextBySelection	
+}
+
+//scriptsMenu.addSeparator();
+addHotKey(myfilterTextBySelection); 
+scriptsMenu.addItem(myfilterTextBySelection);
+
+
 
 /*
 QString Dialog::translateString(const QString &arg1, int var)
@@ -188,6 +488,7 @@ QString Dialog::translateString(const QString &arg1, int var)
     }
     case 5:	{
         // Порезать строки на N символов
+		// >>>>>>> function splitTheSelectedText() {
         txt_end = txt;
         int sLen = ui->lineLength->text().toInt();
         if (sLen<=0 || sLen<=10 || sLen > 150) {

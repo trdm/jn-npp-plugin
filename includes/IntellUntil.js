@@ -7,18 +7,11 @@ var gHelpFolderBFrame = gHelpFolder+'about.html';
 var gHelpDocum = null;
 var gHelpWindow = null;
 
-var gMessageWindow = null;
-var gMessageDocum = null;
+var gUntilMenu = null; // var gTranslate = Editor.addMenu("MyMemory");
+gUntilMenu = scriptsMenu.addMenu("UntilMenu");
 
-//require("User32.dll.js");
-// глобальная переменная с меню скриптами.
-var scriptsMenu;
-if (!jN.scriptsMenu){
-	scriptsMenu = Editor.addMenu("Скрипты");
-	jN.scriptsMenu = scriptsMenu;
-} else { 
-	scriptsMenu = jN.scriptsMenu;
-}
+
+
 
 function convertHTML_EntriesCyrilic(psStr) {
 	//trdm: 2018-01-27 15:28:15
@@ -124,98 +117,19 @@ var myHelpOpenCommand = {
     key: 0x70, // "F1"
     cmd: openHelp	
 };
-scriptsMenu.addSeparator();
-addHotKey(myHelpOpenCommand); 
-scriptsMenu.addItem(myHelpOpenCommand);
-
-
-//{trdm: 2018-02-28 13:20:36
-function createMessageWindow() {
-	var option = {		
-		name:'Сообщения (Закрыть: Ctrl+Shift+Z):',		
-		docking:'bottom', 
-		onclose:function(){
-				gMessageWindow = '';
-				gMessageDocum = '';
-			}
-		};	
-	gMessageWindow = Editor.createDockable(option);
-	gMessageDocum = gMessageWindow.document;
-	// ul{margin-left: 20px;} - виден маркер ul{margin-left: 3px;} - не виден
-	strDoc = '<html><head><style type="text/css">body{font-size: 14px; font-family:courier ; margin: 2px; padding:2px;} ul{margin-left: 3px;}</style> '+
-	'</head><body><UL id="main"></UL></body>';
-	gMessageDocum.write(strDoc);
-}
-
-// using: message('bla-bla-bla');
-function message(psStr) {
-	if(!gMessageWindow) {
-		createMessageWindow();
-    }
-	if(gMessageDocum) {
-		var main = gMessageDocum.getElementById("main");
-		var p = gMessageDocum.createElement('li');
-		p.innerText = psStr;// + 'dlh.handle = ' + gMessageWindow.handle;
-		main.appendChild(p);
-    }
-}
-function EditorMessage(psMessage) {	message(psMessage); }
-function EditorMessageDT(psMessage) {	
-	var Today = new Date;
-	var dts = formatData(Today,'yyyy-MM-dd HH:mm:ss');
-	message(dts+' '+psMessage); 
-}
-var mDebud = false;
-
-if(mDebud) {
-	message('Hello!');
-	message('Hello!-2');
-	message('Пример 2. Использование :before и content');
-	EditorMessageDT('<- Строка с датой и временем. ');
-	EditorMessage('bla-bla-bla');
-}
-
-function CloseMessageWnd() {
-	if(gMessageWindow) {
-		gMessageWindow.visible = false; // это работает
-		gMessageWindow.close();
-		gMessageWindow = '';
-		gMessageDocum = '';
-    }
-}
-
-var myCloseMessageWndCommand = {
-    text: "Закрыть окно сообщений \tCtrl+Shift+Z", 
-    ctrl: true,    shift: true,    alt: false,
-    key: 0x5A, // "F1"
-    cmd: CloseMessageWnd	
-};
-
-addHotKey(myCloseMessageWndCommand); 
-scriptsMenu.addItem(myCloseMessageWndCommand);
+// trdm 2018-08-15 07:54:24 - Отключаю, LanguageHelpU.dll - нормально
+//scriptsMenu.addSeparator(); addHotKey(myHelpOpenCommand);  scriptsMenu.addItem(myHelpOpenCommand);
 
 
 //}trdm: 2018-02-28 13:20:36
 
 
-function testNavigate() {
-	if(gHelpDocum) {
-		debugger;
-		var el = gHelpDocum.getElementById('b_frame');
-		var el2 = gHelpDocum.getElementById('frame_t');
-		var list = el2.getElementsByTagName("a");
-		for(var i = 0; i<= list.length; i++) {
-			var elA = list.item(i);
-		}
-    }
-	
-}
-
 // 2017-11-17 14:52:19  formatData(Today,'yyyy-MM-dd HH:mm:ss');
 function formatData(data, fmString) {
 	//debugger;
+	// yyyyMMdd_HHmmssmis
 	var retVal = fmString;
-	var re = /(dd|MMMM|MM|yyyy|yy|hh|HH|mm|ss|tt|S)/g;
+	var re = /(dd|MMMM|MM|yyyy|yy|hh|HH|mm|ss|tt|ms|mis|S)/g;
 	var monses = "январь,февраль,март,апрель,май,июнь,июль,август,сентябрь,октябрь,ноябрь,декабрь";
 	var monsArr = monses.split(',');
 	var td = {}
@@ -227,6 +141,7 @@ function formatData(data, fmString) {
 	td.MMMM = monsArr[data.getMonth()];
 	td.YY = formatN(data.getFullYear(),2);
 	td.YYYY = formatN(data.getFullYear(),4);
+	td.ms = formatN(data.getMilliseconds(),4);
 		
 	var reRe = "";
 	while ((reRe = re.exec(fmString)) != null) {
@@ -236,12 +151,15 @@ function formatData(data, fmString) {
 			case "HH":
 				retVal = retVal.replace(fRes,td.hh);
 				break;
+			case "ms":
+			case "mis":
+				retVal = retVal.replace(fRes,td.ms);
+				break;
 			case "mm":
 				retVal = retVal.replace(fRes,td.mm);
 				break;
 			case "ss":
 			case "SS":
-			case "S":
 				retVal = retVal.replace(fRes,td.ss);
 				break;
 			case "yyyy":
@@ -302,11 +220,12 @@ function InputBox(psTxt, psCapt, psVal) {
 }
 
 // удаляем строки которые длинее n символов
-function remoteRowOverLength() {
-	var vOLen = 1000;
+function rowsOverLengthRemote(psOper) {
+	var vOLen = 300;
+	if(!psOper) {	psOper = 1;    }
 	vOLen = InputBox('Input length',"For very long rows",vOLen);
 	vOLen = parseInt(vOLen);
-	if(vOLen <= 100) {
+	if(vOLen <= 40 || vOLen == 0) {
 		return;
     }
 	// debugger;
@@ -318,8 +237,16 @@ function remoteRowOverLength() {
     for(var i = 0; i<vArr.length; i++) {
 		vLine = vArr[i];
 		if(vLine.length <= vOLen) {        
-			vTextNeed = vTextNeed + '\n' + vArr[i];
-        }
+			vTextNeed = vTextNeed + '\n' + vLine;
+        } else {
+			if(psOper == 2) {
+				message("Cut string N: "+i+' length" '+vLine.length+' >> '+vLine.substring(0, 500));
+				vTextNeed = vTextNeed + '\n' + vLine.substring(0,vOLen);				
+            } else if(psOper == 1) {
+				message("Kill string N: "+i+' length" '+vLine.length+' >> '+vLine.substring(0, 500));
+            }
+			
+		}
     }
     Editor.currentView.text = vTextNeed;    
 }
@@ -328,10 +255,152 @@ var myKillVeryLengthRows = {
     text: "Удалить строки длинее N \tCtrl+Shift+K", 
     ctrl: true,    shift: true,    alt: false,
     key: 0x4B, // "K key"
-    cmd: remoteRowOverLength	
+    cmd: rowsOverLengthRemote	
 };
 
-addHotKey(myKillVeryLengthRows); 
-scriptsMenu.addItem(myKillVeryLengthRows);
 
+addHotKey(myKillVeryLengthRows); 
+gUntilMenu.addItem(myKillVeryLengthRows);
+
+function rowsOverLengthCut() {	rowsOverLengthRemote(2); }
+var myCutVeryLengthRows = {
+    text: "Обрезать строки длинее N ", 
+    cmd: rowsOverLengthCut	
+};
+gUntilMenu.addItem(myCutVeryLengthRows);
+
+
+// trdm 2018-04-10 14:58:14 {
+function splitTheSelectedText() {
+	//debugger;
+	var rv = '';
+	var vText = Editor.currentView.selection;
+	var sLen = 110;
+	var vTextLines = vText.split('\n');
+	vText = '';
+	for(var i = 0; i<vTextLines.length; i++) {
+		var vLine = vTextLines[i];
+
+		var steps = vLine.length / sLen;
+		for (var s = 1; s<=steps; s++){
+			var cPosS = /*s**/sLen;
+			var cPosE = 0; //(s-1)*sLen;
+			while(cPosS > cPosE) {
+				charItem = vLine[cPosS];
+				if (charItem == ' ' || charItem == '\t'){
+					vText +=  trimSimple(vLine.substring(cPosE,cPosS)) +'\n';
+					vLine = vLine.substring(cPosS)+'\n';
+					// vLine[cPosS] = '\n';
+					break;
+				}
+				cPosS--;
+			}
+		}
+		vText += trimSimple(vLine) + '\n';		
+    }
+	Editor.currentView.selection = vText;
+	return rv;
+}
+
+var mySplitTheSelectedText = {
+    text: "Разбить строки на сегменты по 110 симв. \tCtrl+Shift+S", 
+    ctrl: true,    shift: true,    alt: false,
+    key: 0x53, // "S key"
+    cmd: splitTheSelectedText	
+};
+
+addHotKey(mySplitTheSelectedText); 
+gUntilMenu.addItem(mySplitTheSelectedText);
+
+function deleteEmptyLines() {
+	//debugger;
+	var v8Tab = '\t\t\t\t\t\t\t\t';
+	var vText = Editor.currentView.text;
+	var vTextLines = vText.split('\n');
+	//vTextLines.sort();
+	vText = '';
+	for(var i = 0; i<vTextLines.length; i++) {
+		var vLine = vTextLines[i];
+		while(vLine.indexOf('\t') != -1 ){
+			vLine = vLine.replace('\t','');			
+		}
+		vLine = vLine.replace('\r','');
+		while(vLine.indexOf(' ') != -1 ){
+			vLine = vLine.replace(' ','');
+		}
+		if(vLine.length > 0) {
+			vLine = vTextLines[i];
+			while(vLine.indexOf(v8Tab) == 0){
+				vLine = vLine.replace(v8Tab,'\t');
+			}
+			vText += vLine+'\n';        
+        }
+	}
+	Editor.currentView.text = vText;
+}
+
+var myDeleteEmptyLines = {
+    text: "Удалить пустые строки  \tCtrl+Shift+E", 
+    ctrl: true,    shift: true,    alt: false,
+    key: 0x45, // "S key"
+    cmd: deleteEmptyLines	
+}
+addHotKey(myDeleteEmptyLines); 
+gUntilMenu.addItem(myDeleteEmptyLines);
+
+
+function sortLines() {
+	var rv = '';
+	var vText = Editor.currentView.text;
+	var vTextLines = vText.split('\n');
+	vTextLines.sort();
+	vText = vTextLines.join('\n');
+	Editor.currentView.text = vText;
+	return rv;
+}
+
+var mySortLinesItem = {
+    text: "Сортировать строки", 
+    cmd: sortLines	
+}
+gUntilMenu.addItem(mySortLinesItem);
+
+function sortLinesDesc() {
+	var rv = '';
+	var vText = Editor.currentView.text;
+	var vTextLines = vText.split('\n');
+	vTextLines.sort();
+	vTextLines.reverse();
+	vText = vTextLines.join('\n');
+	Editor.currentView.text = vText;
+	return rv;
+}
+
+var mySortLinesDescItem = {
+    text: "Сортировать строки Desc", 
+    cmd: sortLinesDesc	
+}
+gUntilMenu.addItem(mySortLinesDescItem);
+
+
+
+
+// trdm 2018-04-10 14:58:14 }
+function myStr(psStr) {
+	this.str = psStr;
+	this.cntr = 0;
+	this.toString = function(){
+		this.cntr += 1;
+		return this.str+'_'+this.cntr;		
+	}
+	return this;
+}
+
+function exampleMessage() {
+	var vMyMessage = new myStr('My cool mesage');
+	message(vMyMessage);
+	status(""+vMyMessage);
+	alert(vMyMessage);
+}
+//exampleMessage()
 

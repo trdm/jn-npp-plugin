@@ -13,12 +13,12 @@ function formatN(num, len) {
 	return retVal.substr(retVal.length-len);
 	//return retVal.substr(-len); // <-так не работает.
 }
-
+/*
 // 2017-11-17 14:52:19  formatData(Today,'yyyy-MM-dd HH:mm:ss');
 function formatData(data, fmString) {
 	//debugger;
 	var retVal = fmString;
-	var re = /(dd|MMMM|MM|yyyy|yy|hh|HH|mm|ss|tt|S)/g;
+	var re = /(dd|MMMM|MM|yyyy|yy|hh|HH|mm|ss|tt|ms|S)/g;
 	var monses = "январь,февраль,март,апрель,май,июнь,июль,август,сентябрь,октябрь,ноябрь,декабрь";
 	var monsArr = monses.split(',');
 	var td = {}
@@ -30,6 +30,8 @@ function formatData(data, fmString) {
 	td.MMMM = monsArr[data.getMonth()];
 	td.YY = formatN(data.getFullYear(),2);
 	td.YYYY = formatN(data.getFullYear(),4);
+	td.tt = formatN(data.getMilliseconds(),4);
+	retVal = retVal.replace("ms",td.tt);
 		
 	var reRe = "";
 	while ((reRe = re.exec(fmString)) != null) {
@@ -38,6 +40,10 @@ function formatData(data, fmString) {
 			case "hh":
 			case "HH":
 				retVal = retVal.replace(fRes,td.hh);
+				break;
+			case "tt":
+			case "ms":
+				retVal = retVal.replace(fRes,td.tt);
 				break;
 			case "mm":
 				retVal = retVal.replace(fRes,td.mm);
@@ -71,6 +77,7 @@ function formatData(data, fmString) {
 	}
 	return retVal;
 }
+*/
 
 //trdm: 2018-01-24 12:35:48
 function CIntellLoger(psLogName, psFolderPath) {
