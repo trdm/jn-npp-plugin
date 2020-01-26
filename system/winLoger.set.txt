@@ -1,0 +1,35 @@
+# this is comment 	
+# caption_part = value 		
+
+caption_part = STDU Viewer
+caption_part = GOM Player
+caption_part = Mozilla Firefox
+caption_part_w = .php
+caption_part = Notepad++
+caption_part = - Winamp
+caption_part = - Paint
+caption_part = Спикер - 
+caption_part_w = KDiff3
+caption_part_w = BigXmlReader
+caption_part_w = Microsoft Document Explorer 	
+caption_part_w = Microsoft FrontPage
+caption_part_w = Microsoft Visual C++
+caption_part_w = Microsoft Visual Studio
+caption_part_w = Qt Creator
+caption_part_w = Конфигуратор - 
+caption_part_w = 1С:Предприят
+caption_part_w = TortoiseSVN
+caption_part_w = Sublime Text
+caption_part_w = Microsoft Word
+caption_part_w = Microsoft Excel
+caption_part_w = Microsoft FrontPage
+// Галеон 
+caption_part_w = 176.213.142.76
+class_name = ExploreWClass
+class_name_w = V8TopLevelFrame
+class_name_w = V8MDILocalFrame
+
+//log_in_wnd_class_name_and_hwnd = yes
+log_in_wnd_class_name_and_hwnd = no
+//log_dir = D:\Program Files\Notepad++\plugins\jN\Intell
+log_dir = D:\Program Files\Notepad++\plugins\jN\Intell\logs
