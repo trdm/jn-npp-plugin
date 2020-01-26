@@ -1,0 +1,13 @@
+0000 AppActivate(,)
+0000 CreateShortcut()
+0000 CurrentDirectory
+0000 Environment
+0000 Exec()
+0000 ExpandEnvironmentStrings()
+0000 LogEvent(,,)
+0000 Popup(,,,)
+0000 RegDelete()
+0000 RegRead()
+0000 RegWrite(,,)
+0000 Run(,,)
+0000 SendKeys(,)

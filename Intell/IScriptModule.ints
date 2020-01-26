@@ -1,0 +1,6 @@
+0000 AddCode() | Add code to the module
+0000 CodeObject
+0000 Eval() | Evaluate an expression within the context of the module
+0000 ExecuteStatement() | Execute a statement within the context of the module
+0000 Name
+0000 Procedures

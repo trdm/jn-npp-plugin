@@ -1,0 +1,46 @@
+0000 AddressBar
+0000 Application
+0000 Busy
+0000 ClientToWindow(,) | Converts client sizes into window sizes.
+0000 Container
+0000 Document
+0000 ExecWB(,,,) | IOleCommandTarget::Exec
+0000 FullName
+0000 FullScreen
+0000 GetProperty() | Retrieve the Associated value for the property vtValue in the context of the object.
+0000 GoBack() | Navigates to the previous item in the history list.
+0000 GoForward() | Navigates to the next item in the history list.
+0000 GoHome() | Go home/start page.
+0000 GoSearch() | Go Search Page.
+0000 Height
+0000 HWND
+0000 Left
+0000 LocationName
+0000 LocationURL
+0000 MenuBar
+0000 Name
+0000 Navigate(,,,,) | Navigates to a URL or file.
+0000 Navigate2(,,,,) | Navigates to a URL or file or pidl.
+0000 Offline
+0000 Parent
+0000 Path
+0000 PutProperty(,) | Associates vtValue with the name szProperty in the context of the object.
+0000 QueryStatusWB() | IOleCommandTarget::QueryStatus
+0000 Quit() | Exits application and closes the open document.
+0000 ReadyState
+0000 Refresh() | Refresh the currently viewed page.
+0000 Refresh2() | Refresh the currently viewed page.
+0000 RegisterAsBrowser
+0000 RegisterAsDropTarget
+0000 Resizable
+0000 ShowBrowserBar(,,) | Set BrowserBar to Clsid
+0000 Silent
+0000 StatusBar
+0000 StatusText
+0000 Stop() | Stops opening a file.
+0000 TheaterMode
+0000 ToolBar
+0000 Top
+0000 TopLevelContainer
+0000 Type
+0000 Visible

@@ -1,0 +1,14 @@
+0000 Application
+0000 GetFolder
+0000 GetLink
+0000 InvokeVerb() | Execute a command on the item
+0000 IsBrowsable
+0000 IsFileSystem
+0000 IsFolder
+0000 IsLink
+0000 ModifyDate
+0000 Name
+0000 Parent
+0000 Path
+0000 Size
+0000 Type

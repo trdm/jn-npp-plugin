@@ -1,0 +1,5 @@
+Matches = RegExp.Execute
+Boolean = RegExp.Test
+String = RegExp.Replace
+Match = Matches.ForEach
+

@@ -1,0 +1,15 @@
+0000 AddCode() | Add code to the global module
+0000 AddObject(,,) | Add an object to the global namespace of the scripting engine
+0000 AllowUI
+0000 CodeObject
+0000 Error
+0000 Eval() | Evaluate an expression within the context of the global module
+0000 ExecuteStatement() | Execute a statement within the context of the global module
+0000 Language
+0000 Modules
+0000 Procedures
+0000 Reset() | Reset the scripting engine to a newly created state
+0000 Run(,) | Call a procedure defined in the global module
+0000 SitehWnd
+0000 State
+0000 Timeout

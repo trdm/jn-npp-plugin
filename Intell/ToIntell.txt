@@ -1,0 +1,8 @@
+function makeScriptMap( psScriptFName ) {	// todo ctags!!!!		
+if(vType == 'm') vClass.addFunction(vName);
+		vType	"f"	String
+if(vType == 'm' || vType == 'f') vClass.addFunction(vName);
+
+Убрать анона: vName	"__anon39eadf630103"	String
+vName.substring(0,6)	"__anon"	String
+

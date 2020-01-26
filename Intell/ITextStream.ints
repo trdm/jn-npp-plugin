@@ -1,0 +1,12 @@
+0000 AtEndOfLine
+0000 AtEndOfStream
+0000 Close()
+0000 Column
+0000 Line
+0000 Read()
+0000 ReadAll()
+0000 ReadLine()
+0000 Skip()
+0000 SkipLine()
+0000 Write()
+0000 WriteBlankLines()

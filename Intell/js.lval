@@ -130,21 +130,17 @@ String = decodeURIComponent()
 String = encodeURIComponent()
 Array = arguments
 
-#Секция DOM
-#Array.HTMLElement = document.getElementsByTagName()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#Секция DOM надо хорошенько потрудиться надж списком...
+HTMLElement = document.getElementsByTagName()
+HTMLElement = document.activeElement
+HTMLElementCollection =document.all
+HTMLElementCollection =document.anchors
+HTMLElementCollection =document.applets
+HTMLElement = document.body
+HTMLElement = document.createElement()
+HTMLElement = document.elementFromPoint(,)
+HTMLElementCollection =document.forms
+HTMLElementCollection =document.frames
+HTMLElementCollection =document.images
+HTMLElementCollection =document.links
+HTMLElementCollection =document.scripts

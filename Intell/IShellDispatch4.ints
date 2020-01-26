@@ -1,0 +1,36 @@
+0000 AddToRecent(,) | Add an object to the Recent Docuements
+0000 Application
+0000 BrowseForFolder(,,,) | Browse the name space for a Folder
+0000 CanStartStopService() | Determine if the current user can start/stop the named service.
+0000 CascadeWindows() | Cascade Windows
+0000 ControlPanelItem() | Run a Control Panel Item
+0000 EjectPC() | Eject the pc
+0000 Explore() | Explore a folder
+0000 ExplorerPolicy() | Return explorer policy value
+0000 FileRun() | Bring up the file run
+0000 FindComputer() | Find a computer
+0000 FindFiles() | Find Files
+0000 FindPrinter(,,) | Find a Printer in the Directory Service
+0000 GetSetting() | Return shell global setting
+0000 GetSystemInformation() | Retrieve info about the user's system
+0000 Help() | Display shell help
+0000 IsRestricted(,) | get restriction settings
+0000 IsServiceRunning() | Determine if a service is running by name.
+0000 MinimizeAll() | Minimize all windows
+0000 NameSpace() | Get special folder from ShellSpecialFolderConstants
+0000 Open() | Open a folder
+0000 Parent
+0000 RefreshMenu() | Refresh the menu
+0000 ServiceStart(,) | Start a service by name, and optionally set it to autostart.
+0000 ServiceStop(,) | Stop a service by name, and optionally disable autostart.
+0000 SetTime() | Bring up the Set time dialog
+0000 ShellExecute(,,,,) | Execute generic command
+0000 ShowBrowserBar(,) | Show/Hide browser bar.
+0000 ShutdownWindows() | Exit Windows
+0000 Suspend() | Suspend the pc
+0000 TileHorizontally() | Tile windows horizontally
+0000 TileVertically() | Tile windows vertically
+0000 ToggleDesktop() | Raise/lower the desktop
+0000 TrayProperties() | Handle Tray properties
+0000 UndoMinimizeALL() | Undo Minimize All
+0000 Windows() | The collection of open folder windows

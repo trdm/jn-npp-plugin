@@ -1,0 +1,13 @@
+0000 abort() | Abort HTTP request
+0000 getAllResponseHeaders() | Get all HTTP response headers
+0000 getResponseHeader() | Get HTTP response header
+0000 onreadystatechange
+0000 open(,,,,) | Open HTTP connection
+0000 readyState
+0000 responseBody
+0000 responseStream
+0000 responseText
+0000 responseXML
+0000 send() | Send HTTP request
+0000 setRequestHeader(,) | Add HTTP request header
+0000 status

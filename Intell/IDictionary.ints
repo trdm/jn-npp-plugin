@@ -1,0 +1,9 @@
+0000 Add(,) | Add a new key and item to the dictionary.
+0000 CompareMode
+0000 Count
+0000 Exists() | Determine if a given key is in the dictionary.
+0000 Item
+0000 Items() | Get an array containing all items in the dictionary.
+0000 Key
+0000 Keys() | Get an array containing all keys in the dictionary.
+0000 Remove() | Remove a given key from the dictionary.

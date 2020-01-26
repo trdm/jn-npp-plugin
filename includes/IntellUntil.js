@@ -382,6 +382,53 @@ var mySortLinesDescItem = {
 }
 gUntilMenu.addItem(mySortLinesDescItem);
 
+// trdm 2020-01-08 11:41:39  
+/* Задача - получить спискок файлов для построения индекса подсказки и готудефинишинз 
+	регулярка для CMake*.txt (https://regexr.com/)
+		[\s|$]([a-zA-Z_]+)\s*\(([^\)]*)\)
+	однако сначала надо убить все строки начиная с #
+*/
+function CMakeParser(psDirOrFile) {
+	this.initData = psDirOrFile;
+	this.initFolder = '';
+	this.checkInitData = function() {
+		//debugger;
+		this.initFolder = '';
+		if(this.initData != '') {
+			if(gFso.FileExists(this.initData)) {
+				var vFileObj = gFso.GetFile(this.initData);
+				this.initFolder = vFileObj.ParentFolder.Path;
+				
+			}
+        } else {
+			this.initFolder = '';
+		}
+	}	
+	this.parse = function () {
+    	var rv = '';
+    	return rv;
+    }
+	this.checkInitData();
+	if(this.initFolder != '') {
+		
+    }
+	
+}
+
+function testCMakeParser() {
+	var rv = 'C:\\Progekts\\_Ros\\master\\m\\base\\shell\\filebrowser\\CMakeLists.txt';
+	var ObjCMP = new CMakeParser(rv);
+	return rv;
+}
+
+var myTestCMakeParser = {
+    text: "testCMakeParser\tAlt+T", 
+    ctrl: true,    shift: false,    alt: false,
+    key: 0x54, // "alt+T key"
+    cmd: testCMakeParser
+	
+}
+gUntilMenu.addItem(myTestCMakeParser);
 
 
 

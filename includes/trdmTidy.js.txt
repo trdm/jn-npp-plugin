@@ -1,0 +1,42 @@
+<head>
+<title>МИКРОПРОЦЕССОРЫ ФИРМЫ INTEL</title>
+<link rel="canonical" href="http://www.cyberforum.ru/post12477602.html" />
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1251" />
+<meta name="keywords" content="Assembler, Электронный учебник" />
+<meta name="description" content="Решено: Электронный учебник Assembler Ответ 12477602" />
+<meta name="viewport" content="width=device-width" />
+<link rel="stylesheet" type="text/css" href="cyberforum.css" />
+<link rel="stylesheet" href="geshi.css" type="text/css" media="screen" />
+<link rel="stylesheet" type="text/css" href="spoiler.css" />
+</head>
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>МИКРОПРОЦЕССОРЫ ФИРМЫ INTEL</title>
+  <link rel="canonical" href="http://www.cyberforum.ru/post12477602.html">
+  <meta http-equiv="Content-Type" content="text/html; charset=windows-1251">
+  <meta name="keywords" content="Assembler, Электронный учебник">
+  <meta name="description" content="Решено: Электронный учебник Assembler Ответ 12477602">
+  <meta name="viewport" content="width=device-width">
+  <link rel="stylesheet" type="text/css" href="cyberforum.css">
+  <link rel="stylesheet" href="geshi.css" type="text/css" media="screen">
+  <link rel="stylesheet" type="text/css" href="spoiler.css">
+</head>
+<body>
+</body>
+</html>
+
+===========================================================================
+  <link rel="stylesheet" type="text/css" href="cyberforum.css">  <link rel="stylesheet" href="geshi.css" type="text/css" media="screen">  <link rel="stylesheet" type="text/css" href="spoiler.css">
+to:
+
+<head>
+  <link rel="stylesheet" type="text/css" href="cyberforum.css">
+  <link rel="stylesheet" href="geshi.css" type="text/css" media="screen">
+  <link rel="stylesheet" type="text/css" href="spoiler.css">
+  <title></title>
+</head>
+

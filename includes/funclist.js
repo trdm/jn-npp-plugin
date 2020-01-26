@@ -116,14 +116,15 @@ function killComment(psLine) {
 // trdm 2017-11-06
 // для *.html, прыгунок на теги <script|form|img|meta|table|style|head|body|div|ul / >в файле.
 function gotoAnyHtmlTag() {
+	if(IntellPlus.debugMode()) {		debugger;        }
 	var tagList = new Array;
     var lines = Editor.currentView.lines;    
-	var tagTypeList = 'script,form,img,meta,table,style,head,body,div,ul,interface,coclass'.split(',');
-	var tagType = selectValue(tagTypeList,"Выберите тег");
+	var tagTypeList = 'script,link,title,form,img,meta,table,style,head,body,div,ul,interface,coclass'.split(',');
+	var tagType = selectValue(tagTypeList,"Выберите тег",true,true);
 	if (tagType) {
 		// надо сделать список для выбора типа тега script/form/img/meta
 		//debugger;
-		var reTxt = "\\s*<\\s*" + tagType + "\\s+";
+		var reTxt = "\\s*<\\s*" + tagType + "(\\s+|>)";
 		var re = new RegExp(reTxt,"ig");
 		
 		for (var lineNo=0; lineNo<lines.count; lineNo++)
@@ -159,6 +160,7 @@ function listFunctions () { // Главная функция скрипта.
     var funcList = new Array;
     var funcLines = {};
 	var standartParse = true;
+	
 	IntellPlus.init();
 	if(IntellPlus.curExtension == "1s" || IntellPlus.curExtension == "bsl") { 
 		var listStr = getObjectListFromFileByCtags(IntellPlus.curPathFile);
@@ -202,12 +204,18 @@ function listFunctions () { // Главная функция скрипта.
 		}
     }
 	funcList.sort();
-    var vCaption = "Выберите функцию";
+    var vCaption = "Выберите функцию (funclist.js)";
 	// if(Editor.currentView.) { }  надо получить текущее расширение и если это *.tmpl, то писать :"Выберите шаблон"
 	addToHistory();
-    var selFunc = selectValue(funcList,vCaption);
-    if (selFunc) 
-        goToLine(funcLines[selFunc],false);        
+	if(funcList.length > 0) {
+		var selFunc = selectValue(funcList,vCaption);
+		if (selFunc) 
+			goToLine(funcLines[selFunc],false);        
+    } else {
+		if(IntellPlus.isHtml()) {
+			gotoAnyHtmlTag();
+        }
+	}
 }
 
 function VBScriptRegExpr(psPatern, psText) {
@@ -293,7 +301,7 @@ function addSearchPattern(pattern, nameIndex, classIndex) {
     });
 }
 
-function selectValue(values, psCaption) {
+function selectValue(values, psCaption, psSort, psUserInput) {
 	
     try    {
         var sel = new ActiveXObject('Svcsvc.Service')
@@ -303,9 +311,48 @@ function selectValue(values, psCaption) {
         alert("Не удалось создать объект 'Svcsvc.Service'. Зарегистрируйте svcsvc.dll");
         return false;
     }
+	var vSort = true;
+	if(psSort !== undefined) {		vSort = psSort;    }
+	var vUserUnp = false;
+	if(psUserInput !== undefined) {
+		vUserUnp = psUserInput;  
+    }
 	try { 
 		// 256 - сортировка списка
-		retVal = gSelector.FilterValue(values.join("\r\n"), 1 /*| 4 */| 32 | 256, psCaption, 0, 0, 0, 0);    
+		/**
+		-------------------------------------------------------------
+		FilterValue(ByVal Values As String, ByVal Flags As Short=0,	ByVal Caption As String="", ByVal X As Long=0, ByVal Y As Long=0, ByVal W As Long=0, ByVal H As Long=0) As String
+		Открывает окошко выбора из списка с фильтрацией.
+		Те по мере ввода текста список для выбора уменьшается.
+
+		Values
+			Строка со значениями для выбора, каждое из которых расположено
+			на отдельной строке (разделены vbCrLf).
+		Flags
+			Различные флаги. Может быть суммой следующих значений:
+		1	- Фильтровать по вхождению подстрок. Если флаг не указан,
+			значения будут фильтроваться с начала строки.
+		2	- Вывести окно в позиции мыши.
+		4	- Вывести окно в позиции курсора
+		8	- Вывести окно в указанных координатах
+		16	- Допускать ввод своих значений. В этом случае функция возвратит
+			то, что пользователь набрал в окне ввода. Иначе будет возвращен
+			выбранный пункт списка.
+		32	- Использовать заголовок. В этом случае список выбора выведется
+			с указанным заголовком.
+		64	- Использовать заголовок в качестве начального значения фильтра.
+			В этом случае список выбора выведется уже отфильтрованным по данному значению.
+		128	- Попытаться заполнить список из активного комбобокса или листбокса
+		256	- Сортировка списка
+		512	- Автоширина окна (автоматически при изменении списка ширина окна подстраивается
+			по текущей самой длинной строке)
+		Необязательный параметр. По умолчанию 0.
+		
+		*/
+		var vOptions = 1 /*| 4 */ | 32 ;
+		if(vUserUnp) {	vOptions |= 16;        }
+		if(vSort) 	 {	vOptions |= 256;        }
+		retVal = gSelector.FilterValue(values.join("\r\n"), vOptions, psCaption, 0, 0, 0, 0);    
     } catch(e) {
 		retVal = gSelector.FilterValue(values.join("\r\n"), 1 /*| 4 */| 32, psCaption, 0, 0, 0, 0);    
     }
@@ -335,6 +382,128 @@ function vTag(psIterator) {
 		this.atribEnd[this.lastAtribName] = this.Iterator.i;
 	}
 }
+
+
+function vTagAnalizer(psLine) {
+	this.Tags = [];
+	this.Iterator = {i: 0, line_: psLine};
+	this.isChar = /[\w\dА-я]/;
+	this.getChar = function (vIterator,line) {
+		var ch = '';
+		if(Iterator.i<line.length-1) {
+			ch = line.charAt(Iterator.i);			//Iterator.i = Iterator.i + 1;
+		}
+		return ch;
+    }	
+	
+	this.tagByPos  = function(psPos) {
+		var rv = null;		
+		var vTag = 0;
+		for (var i = 0; i<this.Tags.length; i++){
+			vTag = this.Tags[i];
+			if (vTag.start < psPos && vTag.end >= psPos) {
+				return vTag;
+			}
+		}
+		return rv;
+	}
+
+	/* Пропустить пробелы */
+	this.SkipSpaces = function(Iterator, line) {	
+		var vChar = this.getChar(Iterator.i,line);
+		if(vChar != '') {
+			while(true) {
+				if(vChar == ' ' || vChar == '\t') {
+					Iterator.i = Iterator.i + 1;
+					vChar = this.getChar(Iterator,line);
+				} else {
+					Iterator.i = Iterator.i - 1;
+					return;
+				}
+			}
+		}
+		return 0;
+	}
+
+	this.testLine = function (psLine) {
+    	var rv = {tagName: '', atribName: '', atribVal: ''};
+		var vIterator  = {i: 0, line_: psLine};
+		var line = psLine;
+		
+		var vCurChr = '';
+		var vCurTag = '';
+		var vCurIndent = '';
+		var vCurString = '';
+		var vCurSynPos = -1; // -1 before/after tags; 0-in tag, 1 - in tag; 2 in tag value (betwin "" and "")
+		
+		for(vIterator.i = 0; vIterator.i< line.length; vIterator.i++) {
+			vCurChr = this.getChar(vIterator,line);
+			if(vCurChr == '<' || vCurChr == '>') {
+				vCurTag = new vTag(vIterator);
+				vTags[vTags.length] = vCurTag;			
+				if(vTags.length-2>=0) {
+					vTags[vTags.length-2].end = vIterator.i;
+				}
+				this.SkipSpaces(vIterator, line);
+				vCurSynPos = 0;
+				vCurIndent = '';
+			} else if(vCurSynPos == 0 || vCurSynPos == 1) {
+				
+				vCurChr = this.getChar(vIterator,line);
+				while(isChar.test(vCurChr)){
+					vCurIndent = vCurIndent + vCurChr;
+					vIterator.i = vIterator.i + 1;
+					vCurChr = this.getChar(vIterator,line);
+				}
+				if(vCurIndent != '') {
+					if(vCurSynPos == 0) {
+						vCurTag.setName(vCurIndent);
+						vCurSynPos = 1;
+					} else if(vCurSynPos == 1) {
+						vCurTag.addAtrib(vCurIndent);            
+					}
+				}
+				vCurIndent = '';
+				this.SkipSpaces(vIterator, line);
+				if (vCurChr	== "=") {
+					this.SkipSpaces(vIterator, line);
+					vIterator.i = vIterator.i+1;
+					vCurChr	= this.getChar(vIterator,line);
+					if (vCurChr == '"') {
+						vCurSynPos = 2;
+					}
+				} 		
+			} 
+			if (vCurChr == '"') {
+				vCurString = "";
+				vIterator.i = vIterator.i + 1;
+				vCurChr = this.getChar(vIterator,line);
+				while (vCurChr != '"') {
+					vCurString = vCurString  + vCurChr;
+					vIterator.i = vIterator.i + 1;
+					vCurChr = this.getChar(vIterator,line);
+				}
+				try { 
+					vCurTag.setAtribData(vCurString);
+				} catch(e) {
+					return 0;
+				}
+				
+				vCurSynPos = 1;			    
+			}	
+		}
+		
+    	return rv;
+    }	
+	this.testWiev = function() {
+		var rb = '';
+		var line = currentView.lines.get(view.line).text;
+		line = line.replace(/[\t]/g,"    "); 
+		rv = this.testLine(line);
+    	return rv;
+    }
+}
+
 
 function goToDefinitionHtml_gh(Iterator, line) {
 	var ch = '';
@@ -383,10 +552,18 @@ function getTagByPos(psTags, psPos) {
     return rv;
 }
 
-function goToFile(psCurFilePath) {
+function goToFile(psCurFilePath, psLine ) {
+	var line = psLine;
+	if(psLine === undefined) {
+		line = 0;
+    }
     if (gFso.FileExists(psCurFilePath)) {
 		addToHistory(); 
-		open(psCurFilePath);     		
+		open(psCurFilePath);
+		try { 
+			Editor.currentView.lines.current = line;
+        } catch(e) {
+        }
         return true;
     }
     return false;
@@ -399,7 +576,6 @@ function goToFile(psCurFilePath) {
 function goToDefinitionHtml() {
 	// return 0;
 	var rv = '';
-    var pos = { beginRow: view.line, beginCol: view.column };
 	var line = currentView.lines.get(view.line).text;
 	line = line.replace(/[\t]/g,"    "); 
 	var vIterator = {i: 0, line_: '' }
@@ -462,7 +638,12 @@ function goToDefinitionHtml() {
 				vIterator.i = vIterator.i + 1;
 				vCurChr = goToDefinitionHtml_gh(vIterator,line);
 			}
-			vCurTag.setAtribData(vCurString);
+			try { 
+				vCurTag.setAtribData(vCurString);
+            } catch(e) {
+				return 0;
+            }
+			
 			vCurSynPos = 1;			    
 		}	
     }
@@ -473,11 +654,13 @@ function goToDefinitionHtml() {
         var vFindPath = '';
         if (IntellPlus.startColumnNo != 0) {
             vCurTag = getTagByPos(vTags, IntellPlus.startColumnNo);
-            if (vCurTag.name == 'link') {
-                vFindPath = vCurTag.atrib['href'];
-            }
-            if (vCurTag.name == 'script' /*|| vCurTag.name == 'img'*/) {
-                vFindPath = vCurTag.atrib['src'];
+			if(vCurTag != null) {            
+				if (vCurTag.name == 'link') {
+					vFindPath = vCurTag.atrib['href'];
+				}
+				if (vCurTag.name == 'script' /*|| vCurTag.name == 'img'*/) {
+					vFindPath = vCurTag.atrib['src'];
+				}
             }
         } else 
             return '';
@@ -543,7 +726,7 @@ function attemptToMoveToFile() {
 	var rv = false;
 	var vFileNmFind = '';
 	var vCurLine = IntellPlus.currentLine;
-	
+	if(IntellPlus.debugMode()) {    	debugger;    }
 	/*
 	 for php:	 view.php-> 
 	 include ( 'bug_view_inc.php' );
@@ -553,20 +736,59 @@ function attemptToMoveToFile() {
 	 require  'core.php' ;
 	*/
 	var re1 = /include|require|require_once/ig;
-	var re2 = /(\'(.*)\')/;
+	var re2 = /(\'(.*)\')|(\"(.*)\")/;
 	if(IntellPlus.isPhp()) {		
 		if(re1.test(vCurLine)) {
 			//message('attemptToMoveToFile: re1.test = true');
 			var vMatch = re2.exec(vCurLine);
 			if(vMatch) {
 				vFileNmFind = vMatch[0];
-				vFileNmFind = vFileNmFind.replace('\'','');
-				vFileNmFind = vFileNmFind.replace('\'','');
+				vFileNmFind = vFileNmFind.replace('\'','');				vFileNmFind = vFileNmFind.replace('\'','');
+				vFileNmFind = vFileNmFind.replace('\"','');				vFileNmFind = vFileNmFind.replace('\"','');
+				//message(vFileNmFind);
 			}
 		}
-    } else if(IntellPlus.curExtension == 'txt') {
-		
-    }
+   } else if(IntellPlus.curExtension == 'c' || IntellPlus.curExtension == 'cpp' || IntellPlus.curExtension == 'h') {
+	   //#include "general.h" | #include <string.h>
+        var re3 = /(#include\s([\"\.a-zA-Z0-9_<>\/\\]+))/ig;
+        re3 = /(#include\s([\"\.a-zA-Z0-9_\<\>\/\\]+))/ig;
+        var re4has = /^#include\s</.test(vCurLine);
+	    var vMatch = re2.exec(vCurLine);
+	    if(vMatch) {
+				
+				vFileNmFind = vMatch[0];
+				vFileNmFind = strBetween(vFileNmFind,'"', '"');
+				/*
+				vFileNmFind = vFileNmFind.replace('\'','');				vFileNmFind = vFileNmFind.replace('\'','');
+				vFileNmFind = vFileNmFind.replace('\"','');				vFileNmFind = vFileNmFind.replace('\"','');
+				*/
+				//message(vFileNmFind);
+			} else if (re4has) {
+			    vFileNmFind = strBetween(vCurLine,'<', '>');
+				//message(vFileNmFind);
+			}
+			
+	   
+   } else if(IntellPlus.curExtension == 'txt') {
+		var vCurView = Editor.currentView;
+		if(vCurView.lines.count > 0) {
+			// vCurView.lines.get(1).text.indexOf('_TAG_FILE_FORMAT')	-1	Number
+			// vCurView.lines.get(0).text	"!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+
+			var vLine, vFirstLine = ''+vCurView.lines.get(0).text;	//  currentView.lines.get(currentView.lines.current); 
+			if(vFirstLine.indexOf('_TAG_FILE_FORMAT') != -1) {
+				vLine = IntellPlus.currentLine;
+				var vLineAra = vLine.split('\t');	//	message('stags file..');
+				if(vLineAra.length > 2) {
+					vLine = vLineAra[1];
+					vLine = vLine.split('\\\\').join('\\');
+					return goToFile(vLine, parseInt(vLineAra[2])); // message('vLine = '+vLine);
+                
+                }
+			}
+		}
+		return true;
+	}
 
 	if(vFileNmFind.length > 0) {
 		rv = true;
@@ -599,7 +821,7 @@ function attemptToMoveToFile() {
 				
 			}
 			if(vFileNmFindFull == '') {
-				message('File: '+vFileNmFindFull+' - NOT FOUND!');            
+				message('File: '+vFileNmFind+' - NOT FOUND!');            
             }
 		}
     }
@@ -607,6 +829,17 @@ function attemptToMoveToFile() {
 	return rv;
 }
 
+function testHtmlDef() {
+	var rv = '';
+	IntellPlus.init();
+	if(IntellPlus.debugMode()) {    	debugger;    }
+	if (IntellPlus.curLang == 'html' || IntellPlus.curLang == 'htm' || IntellPlus.curLang == 'php'){
+        goToDefinitionHtml(); 
+	}
+	return rv;
+}
+
+// F12
 function goToDefinition() {
 	var sucsess  = false;
 	IntellPlus.init();
@@ -629,7 +862,7 @@ function goToDefinition() {
 		isC_Cpp = true;
     } else if(IntellPlus.curLang == 'vbs') {
 		isVbs = true;    
-    } else if (IntellPlus.curLang == 'html' || IntellPlus.curLang == 'htm'){
+    } else if (IntellPlus.curLang == 'html' || IntellPlus.curLang == 'htm' || IntellPlus.curLang == 'php'){
         if (goToDefinitionHtml())
             localParsing = false;
     } else {
@@ -637,6 +870,9 @@ function goToDefinition() {
 	}
 	
 	sucsess = attemptToMoveToFile(); //canFileJump
+	if(sucsess) {
+		return;
+    }
 	
 	status('goToDefinition - parse: '+IntellPlus.curFileName);
 	if(localParsing) {    
@@ -718,10 +954,21 @@ function goToDefinition() {
 	status('goToDefinition done for: '+word);
 }
 
+function addToHistory_print(){
+	if(!JUMP_HISTORY.length) { return; }
+	message('History_print');
+	for(var i = 0; i<JUMP_HISTORY.length; i++) {
+		var pos = JUMP_HISTORY[i];
+		var vRow = '______'+pos.row; vRow = vRow.substr(-6);
+		var vLine = vRow+'\t'+pos.file+''
+		message(vLine);
+    }	
+}
 
 function addToHistory_clearDubl() {
 	if(!JUMP_HISTORY.length) { return; }
 	if(gJumperDebug) {	debugger;    }
+	
 	var arrDelIdx = new Array;
 	var row = Editor.currentView.line;
 	var vFile = Editor.currentView.files[Editor.currentView.file];
@@ -786,7 +1033,7 @@ function goToLine(lineNo, doNotRemember) {
     
     // Собственно, позиционирование на нужной строке.
     Editor.currentView.line = lineNo;  
-	//addToHistory();	
+	//addToHistory();	// раскоментировал 	// trdm 2019-12-25 20:40:59  
 }
 
 function setCaretPosInLine(pos) {
@@ -853,6 +1100,19 @@ if (!jN.scriptsMenu){
 	
 //}
 
+
+
+var testHtmlDefItem = {
+    text: "testHtmlDef\tCtrl+T",    
+	ctrl: true,    shift: false,   alt: false,
+    key: 0x54, // T
+    cmd: testHtmlDef
+};
+
+/*System.*/addHotKey(testHtmlDefItem);
+scriptsMenu.addItem(testHtmlDefItem);
+
+
 //{ Список функций 
 var listFunctionsItem = {
     text: "Список функций\tCtrl+1",    
@@ -912,6 +1172,12 @@ var jumpForvardItem2 = {
 };
 addHotKey(jumpForvardItem2);
 
+
+var addToHistory_printItem = {
+    text: "addToHistory..print", 
+    cmd: addToHistory_print
+};
+scriptsMenu.addItem(addToHistory_printItem);
 
 scriptsMenu.addSeparator();
 

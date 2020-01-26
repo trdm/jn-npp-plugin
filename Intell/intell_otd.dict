@@ -1,0 +1,13 @@
+Scripting.Dictionary
+Scripting.FileSystemObject
+ADODB.Connection
+WScript.Shell
+Microsoft.XMLHTTP
+Shell.Application
+MSXML2.DOMDocument
+Svcsvc.Service
+InternetExplorer.Application
+MSComDlg.CommonDialog
+SHPCE.Profiler
+TLI.TypeLibInfo
+TLI.TLIApplication

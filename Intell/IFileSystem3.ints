@@ -1,0 +1,26 @@
+0000 BuildPath(,) | Generate a path from an existing path and a name
+0000 CopyFile(,,) | Copy a file
+0000 CopyFolder(,,) | Copy a folder
+0000 CreateFolder() | Create a folder
+0000 CreateTextFile(,,) | Create a file as a TextStream
+0000 DeleteFile(,) | Delete a file
+0000 DeleteFolder(,) | Delete a folder
+0000 DriveExists() | Check if a drive or a share exists
+0000 Drives
+0000 FileExists() | Check if a file exists
+0000 FolderExists() | Check if a path exists
+0000 GetAbsolutePathName() | Return the canonical representation of the path
+0000 GetBaseName() | Return base name from a path
+0000 GetDrive() | Get drive or UNC share
+0000 GetDriveName() | Return drive from a path
+0000 GetExtensionName() | Return extension from path
+0000 GetFile() | Get file
+0000 GetFileName() | Return the file name from a path
+0000 GetFileVersion() | Retrieve the file version of the specified file into a string
+0000 GetFolder() | Get folder
+0000 GetParentFolderName() | Return path to the parent folder
+0000 GetSpecialFolder() | Get location of various system folders
+0000 GetStandardStream(,) | Retrieve the standard input, output or error stream
+0000 GetTempName() | Generate name that can be used to name a temporary file
+0000 MoveFile(,) | Move a file
+0000 MoveFolder(,) | Move a folder

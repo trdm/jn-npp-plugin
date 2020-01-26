@@ -1,4 +1,6 @@
-﻿var gBr_js = new ActiveXObject("Scripting.Dictionary");
+﻿//\todo - D:\Documents and Settings\trdm\Мои документы\Lightshot\Screenshot_56.png
+
+var gBr_js = new ActiveXObject("Scripting.Dictionary");
 var gFso = new ActiveXObject("Scripting.FileSystemObject");
 var gBrFolder = Editor.nppDir +"\\plugins\\jN\\Intell\\\Brackets\\";
 var gCurentFileDirPath = "";
@@ -8,6 +10,7 @@ var gCurentBr = '(.)';
 var gCurentSelText = '';
 var gCurentTemplateText = '';
 var gCurentTemplateData = '';
+var gLastUsingBr = [];
 
 
 function getExtension(psFileName) {
@@ -183,7 +186,13 @@ function insertBracket() {
 	
 	var curView = Editor.currentView;
 	var selText = curView.selection;
-	var newSelText = selText;
+	if(selText.length == 0) {
+		var l = curView.lines.get(currentView.lines.current); 
+		curView.pos = l.start;
+		curView.anchor = l.end-2;
+	}
+	selText = curView.selection;
+	newSelText = selText;
 	if(selText.length == 0) {
 		return;
     }
@@ -205,24 +214,60 @@ function insertBracket() {
 	curView.selection = newSelText;	
 }
 
+function saveUsingBR( psUBr ) {
+	var pos = -1;
+	if(gLastUsingBr.length == 0) {
+		gLastUsingBr.push(psUBr);
+		return 1;
+    }
+	for(var i = 0; i< gLastUsingBr.length; i++) {
+		if(gLastUsingBr[i] == psUBr) {
+			pos = i;
+			break;
+        }
+    }
+	if(pos != -1) {
+		gLastUsingBr.slice(pos,1);
+    }
+	gLastUsingBr.reverse();
+	gLastUsingBr.push(psUBr);
+	gLastUsingBr.reverse();
+	
+	var tStr = gLastUsingBr.join('|');
+	//message(tStr);
+	return 1;
+}
+
 function selectBracket() {
 	var rv = '';
 	reInitBr();
 	if(gBr_js.Count == 0) {
 		return;
     }
+	if(IntellPlus.debugMode()) {
+    	debugger;
+    }
 	var vKeys = gBr_js.Keys();
 	
 	
 	var vVbsArr = (new VBArray(vKeys)).toArray();	// Get the keys.
 	var vStr = "";
+	
+	for(var i = 0; i< gLastUsingBr.length; i++) {
+		vStr += gLastUsingBr[i] + "\n";
+    }
+	
 	for(var i = 0; i< gBr_js.Count; i++) {
-		vStr += vVbsArr[i] + "\n";
+		var frag = vVbsArr[i];
+		if(!arrayContains(gLastUsingBr, frag)) {
+        	vStr += frag + "\n";
+        }
     }
 
-	rv = selectValue(vStr.split("\n"),"Выберите скобки!");
+	rv = selectValue(vStr.split("\n"),"Выберите скобки!",false, true); // нужен ввод своих значений.
 	if(rv.length > 0) {
 		gCurentBr = rv;
+		saveUsingBR(gCurentBr);
 		insertBracket();
     }
 	return rv;

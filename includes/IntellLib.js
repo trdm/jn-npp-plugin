@@ -13,6 +13,17 @@ function indexOfArray(psStr, psAra) {
 	return rv;
 }
 
+// trdm 2020-01-21 11:50:29  
+function arrayContains(psArray, psItem) {
+	var rv = false;
+	for(var i = 0; i< psArray.length; i++) {
+		if(psArray[i] == psItem) {
+			return true;
+        }
+    }
+	return rv;
+}
+
 // trdm 2018-12-25 08:32:01 
 // Возвращает первое вхожжение элемента из массива в строку
 function strContainsI(psSrc, psAra, psICase) {
@@ -47,7 +58,6 @@ function indexOfArrayBool(psStr, psAra) {
     }
 	return false;	
 }
-
 
 // trdm 2018-12-25 08:11:41 
 function strRightFrom(psSrc, psFragm) {

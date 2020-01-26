@@ -1,0 +1,19 @@
+delim=.
+"."
+(.)
+<b>.</b>
+<H1>.</H1>
+<H2>.</H2>
+<H3>.</H3>
+<H4>.</H4>
+<H5>.</H5>
+<H6>.</H6>
+<i>.</i>
+<u>.</u>
+<pre>.</pre>
+<a href="" alt="">.</a>
+<a name = "g_%datatimemsstr%">.</a> 
+<a href="%get_exist_file_name%">.</a>
+<div class="p_left" >.</div>
+<div class="p_left_caption" >.</div>
+<div class="p_left_tab" >.</div>

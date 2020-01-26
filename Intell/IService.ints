@@ -1,0 +1,17 @@
+0000 AddString() | method AddString
+0000 AnsiToOEM() | Преобразовывает строку из кодировки ANSI в OEM
+0000 FileA2O() | Преобразовать файл из кодировки ANSI в OEM
+0000 FileO2A() | Преобразовать файл из кодировки OEM в ANSI
+0000 FilterValue(,,,,,,) | Выбрать значение из фильтрующегося фильтра
+0000 GetWindowText(,) | Получить текст окна
+0000 KeyboardTimeout
+0000 OEMToAnsi() | Преобразовывает строку из кодировки OEM в ANSI
+0000 PopupMenu(,,,) | Показать контекстное меню
+0000 RemoveAll() | method RemoveAll
+0000 SelectFile(,,,) | Выбрать файл
+0000 SelectFolder(,,,) | Выбрать папку
+0000 SelectInTree(,,,) | Выбрать значение из дерева значений
+0000 SelectValue(,,) | Выбрать значение из списка
+0000 SetContext() | Установить контекст (COM-server) для коллбэков
+0000 SetImageList() | Установить ImageList для использования совместно с FilterValue
+0000 SetWindowText(,) | Установить текст окна

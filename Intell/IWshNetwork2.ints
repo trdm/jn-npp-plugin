@@ -1,0 +1,10 @@
+0000 AddPrinterConnection(,,,,)
+0000 AddWindowsPrinterConnection(,,)
+0000 ComputerName
+0000 EnumNetworkDrives()
+0000 EnumPrinterConnections()
+0000 MapNetworkDrive(,,,,)
+0000 RemoveNetworkDrive(,,)
+0000 RemovePrinterConnection(,,)
+0000 SetDefaultPrinter()
+0000 UserDomain

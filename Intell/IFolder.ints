@@ -1,0 +1,18 @@
+0000 Attributes
+0000 Copy(,) | Copy this folder
+0000 CreateTextFile(,,) | Create a file as a TextStream
+0000 DateCreated
+0000 DateLastAccessed
+0000 DateLastModified
+0000 Delete() | Delete this folder
+0000 Drive
+0000 Files
+0000 IsRootFolder
+0000 Move() | Move this folder
+0000 Name
+0000 ParentFolder
+0000 Path
+0000 ShortName
+0000 ShortPath
+0000 Size
+0000 SubFolders

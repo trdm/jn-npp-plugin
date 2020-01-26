@@ -1,0 +1,9 @@
+0000 ExtractStrCurentObj() | method ExtractStrCurentObj
+0000 FindProcByName() | method FindProcByName
+0000 FindProcByPos() | method FindProcByPos
+0000 GetExportVar() | method GetExportVar
+0000 GetExportVarCount() | method GetExportVarCount
+0000 GetProc() | method GetProc
+0000 InitModule() | method InitModule
+0000 ProcCount() | method ProcCount
+0000 Text
