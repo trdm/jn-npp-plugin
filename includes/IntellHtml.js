@@ -284,7 +284,8 @@ function htmlMakeSelections(psAnaliser) {
 		if(vLP && htmlNeedSelections(vLP)) {		
 	    	var vTag = vLP.tag;
 			var vNames = ['img']
-	    	if( vTag && vTag.name == 'img' && vLP.atribName == "src") {        
+	    	if( vTag /*&& vTag.name == 'img' && vLP.atribName == "src"*/) {        
+				// select 'img'  or "src
     	        var vAtrName = vTag.atribByPos(vLP.column);
 		        if (vAtrName != '') {
 		            vPosStart = vTag.atribPosStartVal(vAtrName)+1;
