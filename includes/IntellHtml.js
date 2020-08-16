@@ -1,18 +1,18 @@
-// trdm 2020-01-27 11:32:07   
+п»ї// trdm 2020-01-27 11:32:07   
 /*
-	Вынес функционал разбора HTML в этот файл.
+	Р’С‹РЅРµСЃ С„СѓРЅРєС†РёРѕРЅР°Р» СЂР°Р·Р±РѕСЂР° HTML РІ СЌС‚РѕС‚ С„Р°Р№Р».
 	todo:
-		- Добавить вызов модификации testHtmlDef() в Intell.js ->getWordList
-		- отработать:
-			- <a href="#<Курсор>" alt="">(Е*)</a> и 
-			- <a href="файл#<Курсор>" alt="">(Е*)</a> и 
+		- Р”РѕР±Р°РІРёС‚СЊ РІС‹Р·РѕРІ РјРѕРґРёС„РёРєР°С†РёРё testHtmlDef() РІ Intell.js ->getWordList
+		- РѕС‚СЂР°Р±РѕС‚Р°С‚СЊ:
+			- <a href="#<РљСѓСЂСЃРѕСЂ>" alt="">(Р•*)</a> Рё 
+			- <a href="С„Р°Р№Р»#<РљСѓСЂСЃРѕСЂ>" alt="">(Р•*)</a> Рё 
 */
 /*
 \todo
 1. CHtmlPlasement.plasement = 
-  <div class="p_left_tab" > Последовательность на <a href=" " alt="">рис. ХХIХа-д.</a> (нет ри)</div>
+  <div class="p_left_tab" > РџРѕСЃР»РµРґРѕРІР°С‚РµР»СЊРЅРѕСЃС‚СЊ РЅР° <a href=" " alt="">СЂРёСЃ. РҐРҐIРҐР°-Рґ.</a> (РЅРµС‚ СЂРё)</div>
 -1 0   1      2             3                      0 1     2  1    2 3             4  3         4 
-2. Деструкторы или очистка связей CHtmlTag.parent
+2. Р”РµСЃС‚СЂСѓРєС‚РѕСЂС‹ РёР»Рё РѕС‡РёСЃС‚РєР° СЃРІСЏР·РµР№ CHtmlTag.parent
 */
 
 function CHtmlPlasement() {
@@ -41,7 +41,7 @@ function CHtmlTag(psIterator) {
 	this.lastAtribName = '';
 	this.parent = null;
 	this.isOpen = function() {
-		// \todo - реализовать. с упором на CHtmlPlasement.plasement = -1; 
+		// \todo - СЂРµР°Р»РёР·РѕРІР°С‚СЊ. СЃ СѓРїРѕСЂРѕРј РЅР° CHtmlPlasement.plasement = -1; 
     	return false;
     }
 	this.setName = function(psName) {
@@ -85,7 +85,7 @@ function CHtmlTagAnalizer(psLine) {
 	this.getLastPlasement = function() {
     	return this.lastPlasement;
     };
-	this.isChar = /[\w\dА-я]/;
+	this.isChar = /[\w\dРђ-СЏ]/;
 	this.getChar = function (vIterator,line) {
 		var ch = '';
 		if(vIterator.i<line.length-1) {
@@ -106,7 +106,7 @@ function CHtmlTagAnalizer(psLine) {
 		return rv;
 	}
 
-	/* Пропустить пробелы */
+	/* РџСЂРѕРїСѓСЃС‚РёС‚СЊ РїСЂРѕР±РµР»С‹ */
 	this.SkipSpaces = function(Iterator, line) {	
 		var vChar = this.getChar(Iterator,line);
 		var vInitPos = Iterator.i;
@@ -211,7 +211,7 @@ function CHtmlTagAnalizer(psLine) {
 			vLastChr = vCurChr;
 		}
 		
-		var vCurPosView = view.column; // Однако Tab считается за 1 символ, а табы мы заменяем на пробелы.
+		var vCurPosView = view.column; // РћРґРЅР°РєРѕ Tab СЃС‡РёС‚Р°РµС‚СЃСЏ Р·Р° 1 СЃРёРјРІРѕР», Р° С‚Р°Р±С‹ РјС‹ Р·Р°РјРµРЅСЏРµРј РЅР° РїСЂРѕР±РµР»С‹.
 		var vTagSch = this.tagByPos(vCurPosView);
 		if(vTagSch != null) {            
 		    rv.tagName = vTagSch.name;
@@ -289,7 +289,7 @@ function htmlMakeSelections(psAnaliser) {
 		        if (vAtrName != '') {
 		            vPosStart = vTag.atribPosStartVal(vAtrName)+1;
 		            vPosEnd = vTag.atribPosEnd(vAtrName);
-					/* bytePos/Pos и column связаны, */
+					/* bytePos/Pos Рё column СЃРІСЏР·Р°РЅС‹, */
 					vPosOffset = view.pos - view.column;
 					view.anchor = vPosStart + vPosOffset;
 					view.pos = vPosEnd + vPosOffset;
@@ -302,12 +302,12 @@ function htmlMakeSelections(psAnaliser) {
 
 function HtmlIntellTestGotoTarget() {
 	var vFilePath = '';
-	// todo - нужно реализовать выделение между "" т.е.выделить:
+	// todo - РЅСѓР¶РЅРѕ СЂРµР°Р»РёР·РѕРІР°С‚СЊ РІС‹РґРµР»РµРЅРёРµ РјРµР¶РґСѓ "" С‚.Рµ.РІС‹РґРµР»РёС‚СЊ:
 	//           ______________________
-	// <img src="img/Screenshot_001.png" alt="альтернативный текст"> 
+	// <img src="img/Screenshot_001.png" alt="Р°Р»СЊС‚РµСЂРЅР°С‚РёРІРЅС‹Р№ С‚РµРєСЃС‚"> 
 	// <link href="/css/style.css?nocache=1297683887" rel="stylesheet" type="text/css">
 	// <script type="text/javascript" src="/js/jquery-1.9.1.min.js"></script>
-	// <a href="pr0101.html">Приложение I Карты энергетических каналов и биоактивных точек (222)</a>
+	// <a href="pr0101.html">РџСЂРёР»РѕР¶РµРЅРёРµ I РљР°СЂС‚С‹ СЌРЅРµСЂРіРµС‚РёС‡РµСЃРєРёС… РєР°РЅР°Р»РѕРІ Рё Р±РёРѕР°РєС‚РёРІРЅС‹С… С‚РѕС‡РµРє (222)</a>
 	var vPlase = {tagName: '', atribName: '', atribVal: ''};
 	var vResult = '';
 	vPlase = htmlGetPlasement();
@@ -329,7 +329,7 @@ function HtmlIntellTestGotoTarget() {
 		vCurFile = trim(vCurFile);
 		if(vCurFile) {
 			if(vCurFile.indexOf('/') != -1) {
-				// есть относительные пути
+				// РµСЃС‚СЊ РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅС‹Рµ РїСѓС‚Рё
 				vCurFile = makeAbsolutePath(""+IntellPlus.curDirPath, vCurFile);
 			} else {
 			    var vCurFileChains = vCurFile.split('#');
