@@ -111,3 +111,27 @@ var myHelpOpenCommand = {
 //scriptsMenu.addSeparator(); addHotKey(myHelpOpenCommand);  scriptsMenu.addItem(myHelpOpenCommand);
 
 
+var gNjPluginDir = Editor.nppDir + "\\plugins\\jN\\";
+var gFSO = new ActiveXObject("Scripting.FileSystemObject");
+var gNjPluginDir2 = gNjPluginDir + "Intell\\";
+
+function ITypeLib_t() {
+	this.DumpStringToFile = function(DumpString, FileName){
+		var File;
+		var vFExist = gFSO.FileExists( FileName );
+		if (!vFExist) {
+			File = gFSO.CreateTextFile( FileName, false);
+		} 
+	}
+}
+
+function f1() {
+	return;
+	var vFileName = gNjPluginDir+"Intell\\_progIdDumped.dict";
+	// ƒиректории 'Intell' не существует в директории gNjPluginDir
+	var VtL = new ITypeLib_t;
+	VtL.DumpStringToFile("", vFileName);
+	//var vFile = gFso.CreateTextFile(vFileName,false); // << ошибка тут.
+}
+
+f1();
