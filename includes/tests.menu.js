@@ -1,19 +1,19 @@
-﻿// var testMenu = Editor.addMenu("Tests");
-//testMenu
+﻿
+// глобальная переменная с меню скриптами.
+if (!jN.scriptsMenu_jN){
+	var scriptsMenu_jN = Editor.addMenu("Скрипты jN");
+	jN.scriptsMenu_jN = scriptsMenu_jN;
+} else { 
+	scriptsMenu_jN = jN.scriptsMenu_jN;
+}
+
+var testMenu = scriptsMenu_jN.addMenu("Tests");
+//var testMenu = Editor.addMenu("Tests");
 
 /*
 	Editor samples
 */
-
-if (!jN.jNExamplesMenu){
-	var jNExamplesMenu = Editor.addMenu("jN Examples");
-	jN.jNExamplesMenu = jNExamplesMenu;
-}
-
-//var smMenu = jN.jNExamplesMenu.addMenu("Smart Highlighter");
-
-var testMenu = jN.jNExamplesMenu.addMenu("Tests");
-var editorMenu = jN.jNExamplesMenu.addMenu("Editor");
+var editorMenu = testMenu.addMenu("Editor");
 
 
 var htoolbar = editorMenu.addItem({
@@ -80,7 +80,7 @@ systemMenu.addItem({
 /*
 	View
 */
-var viewMenu = jN.jNExamplesMenu.addMenu("View");
+var viewMenu = testMenu.addMenu("View");
 
 viewMenu.addItem({
 	text:"Current File",
@@ -225,12 +225,12 @@ wmi.addItem({
 
 (function(){
 	// Power Plans
-	try{		
+	try{
 		var objWMIService = GetObject("winmgmts:{impersonationLevel=impersonate}!//./root/cimv2/power");
-	} catch(e) {
+	}catch(e){
+		// service not available
 		return;
 	}
-	
 	
 	var planItems = {};
 	
@@ -274,20 +274,28 @@ wmi.addItem({
 	}
 })();
 
-function aboutPos() {
-	var rv = "anchor: " + currentView.anchor +" pos: "+ currentView.pos +  " bytePos: "+currentView.bytePos + " column:" + currentView.column ;
-	message(rv);
-	return rv;
-}
 /**
 	Position Samples
 */
-var pos = viewMenu.addMenu("Position Samples");
+var pos = scriptsMenu_jN.addMenu("view - Position Samples");
+
+pos.addItem({
+	text:"get all",
+	cmd:function(){
+		var str = "currentView.pos = " +currentView.pos+
+		"\n currentView.bytePos = "+currentView.bytePos+
+		"\n currentView.anchor = "+currentView.anchor+
+		"\n currentView.column = "+currentView.column + 
+		"\n Line № "+(currentView.lines.current +1)+" of "+currentView.lines.count+
+		"\n Line text:" + currentView.lines.get(currentView.lines.current).text;
+		
+		alert(str);
+	}
+});
 pos.addItem({
 	text:"get pos",
 	cmd:function(){
-		//alert(currentView.pos);
-		aboutPos();
+		alert(currentView.pos);
 	}
 });
 
@@ -295,15 +303,13 @@ pos.addItem({
 	text:"set pos++",
 	cmd:function(){
 		currentView.pos++;
-		aboutPos();
 	}
 });
 
 pos.addItem({
 	text:"get bytePos",
 	cmd:function(){
-		//alert(currentView.bytePos);
-		aboutPos();
+		alert(currentView.bytePos);
 	}
 });
 
@@ -311,7 +317,6 @@ pos.addItem({
 	text:"set bytePos++",
 	cmd:function(){
 		currentView.bytePos++;
-		aboutPos();
 	}
 });
 
@@ -320,8 +325,7 @@ pos.addSeparator();
 pos.addItem({
 	text:"get anchor",
 	cmd:function(){
-		//alert(currentView.anchor);
-		aboutPos();
+		alert(currentView.anchor);
 	}
 });
 
@@ -329,15 +333,13 @@ pos.addItem({
 	text:"set anchor++",
 	cmd:function(){
 		currentView.anchor++;
-		aboutPos();
 	}
 });
 
 pos.addItem({
 	text:"get byteAnchor",
 	cmd:function(){
-		//alert(currentView.byteAnchor);
-		aboutPos();
+		alert(currentView.byteAnchor);
 	}
 });
 
@@ -345,7 +347,6 @@ pos.addItem({
 	text:"set byteAnchor++",
 	cmd:function(){
 		currentView.byteAnchor++;
-		aboutPos();
 	}
 });
 
@@ -354,8 +355,7 @@ pos.addSeparator();
 pos.addItem({
 	text:"get column",
 	cmd:function(){
-		//alert(currentView.column);
-		aboutPos();
+		alert(currentView.column);
 	}
 });
 

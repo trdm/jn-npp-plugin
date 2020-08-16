@@ -51,6 +51,7 @@ var gJumperCurLineText = '';
 var gFuncListLoger = '';
 
 var gVbsRegExpr = 0;
+var gFso = new ActiveXObject("Scripting.FileSystemObject");
 
 var JUMP_HISTORY_SPointer = -1;
 var JUMP_HISTORY = new Array();
@@ -119,7 +120,7 @@ function gotoAnyHtmlTag() {
 	if(IntellPlus.debugMode()) {		debugger;        }
 	var tagList = new Array;
     var lines = Editor.currentView.lines;    
-	var tagTypeList = 'script,link,title,form,img,meta,table,style,head,body,div,ul,interface,coclass'.split(',');
+	var tagTypeList = 'a,script,link,title,form,img,meta,table,style,head,body,div,ul,interface,coclass'.split(',');
 	var tagType = selectValue(tagTypeList,"Выберите тег",true,true);
 	if (tagType) {
 		// надо сделать список для выбора типа тега script/form/img/meta
@@ -360,198 +361,6 @@ function selectValue(values, psCaption, psSort, psUserInput) {
    return retVal;    
 }
 
-function vTag(psIterator) {
-	this.Iterator = psIterator;
-	this.start = psIterator.i;
-	this.end = -1;
-	this.name = '';
-	this.atrib = [];
-	this.atribStart = [];
-	this.atribEnd = [];
-	this.lastAtribName = '';
-	this.setName = function(psName) {
-		this.name = psName;
-	}
-	this.addAtrib = function(psNameF) {
-		this.lastAtribName = psNameF;
-		this.atrib[psNameF] = '';
-		this.atribStart[psNameF] = this.Iterator.i - psNameF.length;
-	}
-	this.setAtribData = function(psData) {
-		this.atrib[this.lastAtribName] = psData;
-		this.atribEnd[this.lastAtribName] = this.Iterator.i;
-	}
-}
-
-
-function vTagAnalizer(psLine) {
-	this.Tags = [];
-	this.Iterator = {i: 0, line_: psLine};
-	this.isChar = /[\w\dА-я]/;
-	this.getChar = function (vIterator,line) {
-		var ch = '';
-		if(Iterator.i<line.length-1) {
-			ch = line.charAt(Iterator.i);			//Iterator.i = Iterator.i + 1;
-		}
-		return ch;
-    }	
-	
-	this.tagByPos  = function(psPos) {
-		var rv = null;		
-		var vTag = 0;
-		for (var i = 0; i<this.Tags.length; i++){
-			vTag = this.Tags[i];
-			if (vTag.start < psPos && vTag.end >= psPos) {
-				return vTag;
-			}
-		}
-		return rv;
-	}
-
-	/* Пропустить пробелы */
-	this.SkipSpaces = function(Iterator, line) {	
-		var vChar = this.getChar(Iterator.i,line);
-		if(vChar != '') {
-			while(true) {
-				if(vChar == ' ' || vChar == '\t') {
-					Iterator.i = Iterator.i + 1;
-					vChar = this.getChar(Iterator,line);
-				} else {
-					Iterator.i = Iterator.i - 1;
-					return;
-				}
-			}
-		}
-		return 0;
-	}
-
-	this.testLine = function (psLine) {
-    	var rv = {tagName: '', atribName: '', atribVal: ''};
-		var vIterator  = {i: 0, line_: psLine};
-		var line = psLine;
-		
-		var vCurChr = '';
-		var vCurTag = '';
-		var vCurIndent = '';
-		var vCurString = '';
-		var vCurSynPos = -1; // -1 before/after tags; 0-in tag, 1 - in tag; 2 in tag value (betwin "" and "")
-		
-		for(vIterator.i = 0; vIterator.i< line.length; vIterator.i++) {
-			vCurChr = this.getChar(vIterator,line);
-			if(vCurChr == '<' || vCurChr == '>') {
-				vCurTag = new vTag(vIterator);
-				vTags[vTags.length] = vCurTag;			
-				if(vTags.length-2>=0) {
-					vTags[vTags.length-2].end = vIterator.i;
-				}
-				this.SkipSpaces(vIterator, line);
-				vCurSynPos = 0;
-				vCurIndent = '';
-			} else if(vCurSynPos == 0 || vCurSynPos == 1) {
-				
-				vCurChr = this.getChar(vIterator,line);
-				while(isChar.test(vCurChr)){
-					vCurIndent = vCurIndent + vCurChr;
-					vIterator.i = vIterator.i + 1;
-					vCurChr = this.getChar(vIterator,line);
-				}
-				if(vCurIndent != '') {
-					if(vCurSynPos == 0) {
-						vCurTag.setName(vCurIndent);
-						vCurSynPos = 1;
-					} else if(vCurSynPos == 1) {
-						vCurTag.addAtrib(vCurIndent);            
-					}
-				}
-				vCurIndent = '';
-				this.SkipSpaces(vIterator, line);
-				if (vCurChr	== "=") {
-					this.SkipSpaces(vIterator, line);
-					vIterator.i = vIterator.i+1;
-					vCurChr	= this.getChar(vIterator,line);
-					if (vCurChr == '"') {
-						vCurSynPos = 2;
-					}
-				} 		
-			} 
-			if (vCurChr == '"') {
-				vCurString = "";
-				vIterator.i = vIterator.i + 1;
-				vCurChr = this.getChar(vIterator,line);
-				while (vCurChr != '"') {
-					vCurString = vCurString  + vCurChr;
-					vIterator.i = vIterator.i + 1;
-					vCurChr = this.getChar(vIterator,line);
-				}
-				try { 
-					vCurTag.setAtribData(vCurString);
-				} catch(e) {
-					return 0;
-				}
-				
-				vCurSynPos = 1;			    
-			}	
-		}
-		
-    	return rv;
-    }	
-	this.testWiev = function() {
-		var rb = '';
-		var line = currentView.lines.get(view.line).text;
-		line = line.replace(/[\t]/g,"    "); 
-		rv = this.testLine(line);
-    	return rv;
-    }
-}
-
-
-function goToDefinitionHtml_gh(Iterator, line) {
-	var ch = '';
-	if(Iterator.i<line.length-1) {
-		ch = line.charAt(Iterator.i);
-		//Iterator.i = Iterator.i + 1;
-    }
-	return ch;
-}
-
-function goToDefinitionHtml_ss(Iterator, line) {
-	
-	var vChar = goToDefinitionHtml_gh(Iterator.i,line);
-	if(vChar != '') {
-		while(true) {
-			if(vChar == ' ' || vChar == '\t') {
-				Iterator.i = Iterator.i + 1;
-				vChar = goToDefinitionHtml_gh(Iterator,line);
-			} else {
-				Iterator.i = Iterator.i - 1;
-				return;
-			}
-		}
-	}
-	return 0;
-
-}
-
-function titer(psIterator) {
-	var rv = '';
-	psIterator.i = psIterator.i+1;
-	psIterator.i = psIterator.i+1;
-	psIterator.i = psIterator.i+1;
-	return rv;
-}
-
-function getTagByPos(psTags, psPos) {
-    var rv = null;
-    var vTag = 0;
-    for (var i = 0; i<psTags.length; i++){
-        vTag = psTags[i];
-        if (vTag.start < psPos && vTag.end >= psPos) {
-            return vTag;
-        }
-    }
-    return rv;
-}
-
 function goToFile(psCurFilePath, psLine ) {
 	var line = psLine;
 	if(psLine === undefined) {
@@ -574,117 +383,15 @@ function goToFile(psCurFilePath, psLine ) {
 // trdm 2019-12-09 15:17:42  
 // todo.....
 function goToDefinitionHtml() {
-	// return 0;
-	var rv = '';
-	var line = currentView.lines.get(view.line).text;
-	line = line.replace(/[\t]/g,"    "); 
-	var vIterator = {i: 0, line_: '' }
-	var vTags = [];
-	vIterator.line = line;
-	//titer(vIterator);	return 0;
-	var isChar = /[\w\dА-я]/;
-	var vCurChr = '';
-	var vCurTag = '';
-	var vCurIndent = '';
-	var vCurString = '';
-	var vCurSynPos = -1; // -1 before/after tags; 0-in tag, 1 - in tag; 2 in tag value (betwin "" and "")
-	if(IntellPlus.debugMode()) {    	
-		debugger;    
-	}
-	for(vIterator.i = 0; vIterator.i< line.length; vIterator.i++) {
-		vCurChr = goToDefinitionHtml_gh(vIterator,line);
-		if(vCurChr == '<' || vCurChr == '>') {
-			vCurTag = new vTag(vIterator);
-			vTags[vTags.length] = vCurTag;			
-			if(vTags.length-2>=0) {
-				vTags[vTags.length-2].end = vIterator.i;
-            }
-			goToDefinitionHtml_ss(vIterator, line);
-			vCurSynPos = 0;
-			vCurIndent = '';
-        } else if(vCurSynPos == 0 || vCurSynPos == 1) {
-			
-			vCurChr = goToDefinitionHtml_gh(vIterator,line);
-			while(isChar.test(vCurChr)){
-				vCurIndent = vCurIndent + vCurChr;
-				vIterator.i = vIterator.i + 1;
-				vCurChr = goToDefinitionHtml_gh(vIterator,line);
-            }
-			if(vCurIndent != '') {
-				if(vCurSynPos == 0) {
-					vCurTag.setName(vCurIndent);
-					vCurSynPos = 1;
-				} else if(vCurSynPos == 1) {
-					vCurTag.addAtrib(vCurIndent);            
-				}
-            }
-			vCurIndent = '';
-			goToDefinitionHtml_ss(vIterator, line);
-			if (vCurChr	== "=") {
-    			goToDefinitionHtml_ss(vIterator, line);
-    			vIterator.i = vIterator.i+1;
-			    vCurChr	= goToDefinitionHtml_gh(vIterator,line);
-			    if (vCurChr == '"') {
-			        vCurSynPos = 2;
-			    }
-			} 		
-        } 
-		if (vCurChr == '"') {
-			vCurString = "";
-			vIterator.i = vIterator.i + 1;
-			vCurChr = goToDefinitionHtml_gh(vIterator,line);
-			while (vCurChr != '"') {
-				vCurString = vCurString  + vCurChr;
-				vIterator.i = vIterator.i + 1;
-				vCurChr = goToDefinitionHtml_gh(vIterator,line);
-			}
-			try { 
-				vCurTag.setAtribData(vCurString);
-            } catch(e) {
-				return 0;
-            }
-			
-			vCurSynPos = 1;			    
-		}	
+	var rv = HtmlIntellTestGotoTarget();
+	if(rv) {
+		if(gFso.FileExists(rv)) {
+			goToFile(rv);        
+			return true;
+        }    
     }
-    if (IntellPlus) {
-		var vTagsWithSrcAtribStr = 'script,img';
-		var vTagsWithSrcAtrib = vTagsWithSrcAtribStr.split(',');
-		
-        var vFindPath = '';
-        if (IntellPlus.startColumnNo != 0) {
-            vCurTag = getTagByPos(vTags, IntellPlus.startColumnNo);
-			if(vCurTag != null) {            
-				if (vCurTag.name == 'link') {
-					vFindPath = vCurTag.atrib['href'];
-				}
-				if (vCurTag.name == 'script' /*|| vCurTag.name == 'img'*/) {
-					vFindPath = vCurTag.atrib['src'];
-				}
-            }
-        } else 
-            return '';
-
-        /*
-        	<link rel="stylesheet" type="text/css" href="0005770_files/default.css">
-        */
-        var vCurFilePath = IntellPlus.curDirPath;
-        if (vFindPath != '' && vCurFilePath != '') {
-            var  vSpliter = '/';
-            if (vFindPath.indexOf('\\') != -1) {
-                vSpliter = '\\';
-            } 
-            var vPathArr = vFindPath.split(vSpliter);
-            vCurString = vPathArr.join('\\');
-            vCurFilePath += '\\'+vCurString;
-            if (gFso.FileExists(vCurFilePath)) {
-                goToFile(vCurFilePath);
-                return true;
-            }
-            
-        } 
-    }
-	return rv;
+	return false;
+	// перенес функциональность в IntellHtml.js
 }
 
 function getWordUnderCursor(view) {
@@ -776,8 +483,8 @@ function attemptToMoveToFile() {
 			// vCurView.lines.get(0).text	"!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
 
 			var vLine, vFirstLine = ''+vCurView.lines.get(0).text;	//  currentView.lines.get(currentView.lines.current); 
+			vLine = IntellPlus.currentLine;
 			if(vFirstLine.indexOf('_TAG_FILE_FORMAT') != -1) {
-				vLine = IntellPlus.currentLine;
 				var vLineAra = vLine.split('\t');	//	message('stags file..');
 				if(vLineAra.length > 2) {
 					vLine = vLineAra[1];
@@ -785,14 +492,22 @@ function attemptToMoveToFile() {
 					return goToFile(vLine, parseInt(vLineAra[2])); // message('vLine = '+vLine);
                 
                 }
-			}
+			} else {
+			    vLine = trim(vLine);
+   				if(gFso.FileExists(vLine)) {
+   				    return goToFile(vLine);
+			    }
+			} 			 
 		}
 		return true;
-	}
+	} else if(IntellPlus.isHtml()) {
+		// тут переход сам обрабатывается.
+		return goToDefinitionHtml();
+    
+    }
 
 	if(vFileNmFind.length > 0) {
-		rv = true;
-		var gFso = new ActiveXObject("Scripting.FileSystemObject");
+		rv = true;		
 		var vFileNmFindFull = vFileNmFind;
 		if (IntellPlus.curDirPath)
 		    vFileNmFindFull = IntellPlus.curDirPath+vFileNmFindFull;
@@ -829,15 +544,6 @@ function attemptToMoveToFile() {
 	return rv;
 }
 
-function testHtmlDef() {
-	var rv = '';
-	IntellPlus.init();
-	if(IntellPlus.debugMode()) {    	debugger;    }
-	if (IntellPlus.curLang == 'html' || IntellPlus.curLang == 'htm' || IntellPlus.curLang == 'php'){
-        goToDefinitionHtml(); 
-	}
-	return rv;
-}
 
 // F12
 function goToDefinition() {
@@ -1100,17 +806,6 @@ if (!jN.scriptsMenu){
 	
 //}
 
-
-
-var testHtmlDefItem = {
-    text: "testHtmlDef\tCtrl+T",    
-	ctrl: true,    shift: false,   alt: false,
-    key: 0x54, // T
-    cmd: testHtmlDef
-};
-
-/*System.*/addHotKey(testHtmlDefItem);
-scriptsMenu.addItem(testHtmlDefItem);
 
 
 //{ Список функций 

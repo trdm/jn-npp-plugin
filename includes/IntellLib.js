@@ -86,6 +86,19 @@ function strBetween(psSrc, psLeft, psRight) {
 	rv = strLeftFrom(rv, psRight);
 	return rv;
 }
+
+//	ends with this - заканчивается этим
+function strEndWithThis(psStrSrc, psEnd) {
+	var vRetVal = false;
+	var vLastIdx = psStrSrc.lastIndexOf(psEnd);
+	if(vLastIdx != -1) {
+		var vTl = vLastIdx + psEnd.length;
+		if(psStrSrc.length == vTl) {
+			var vRetVal = true;
+        }
+    }	
+	return vRetVal;
+}
 // var vTestStr = "Процедура ПроверитьОбновлениеАдресныхОбъектов() Экспорт";
 // var vResStr = strBetween(vTestStr,"Процедура","(");
 // message(vResStr);

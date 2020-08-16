@@ -98,14 +98,14 @@ require("lib/Window.js");
 require("lib/scintilla.js");
 require("lib/User32.dll.js");
 
-
+//debugger;
 var gJsLvalDict; 
 var gJsLvalDictUni; 
 var gStatuBar; // Статус бар Notepadd
 var gMenuArray = new Array();
-var gNjPluginDir = Editor.nppDir +"\\plugins\\jN\\";
-var gNjPluginIncDir = Editor.nppDir +"\\plugins\\jN\\includes\\";
-var gNjPluginLibDir = Editor.nppDir +"\\plugins\\jN\\lib\\";
+var gNjPluginDir = Editor.nppDir +"\\plugins\\jN\\jN\\";
+var gNjPluginIncDir = gNjPluginDir +"includes\\";
+var gNjPluginLibDir = gNjPluginDir +"lib\\";
 
 
 var gIntelDir = gNjPluginDir+"Intell\\";
@@ -122,7 +122,7 @@ var gIntelShowParseLine = true;
 
 var gIntellDebug = false; 		// отладка отключена
 var gIntellEnabled = false; 	// технология отключена
-var gOtherVarAsString = false; 	// Остальные переменные определять как строку 
+var gOtherVarAsString = true; 	// Остальные переменные определять как строку 
 var gIntellswitchStringModeMenuItem;
 var gDeleteHelpString = true; 	// удалять документацию если есть
 var gSendEscAfterSelect = true; // Проблема со стандартным автокомплитом
@@ -463,7 +463,7 @@ function insertTemplate() {
 	var vTemplate = IntellPlus.template;
 	var tPos = currentView.pos;
 	var re = /^([\s])+/; // отступ
-	reRe = re.exec(IntellPlus.currentLineCl);
+	reRe = re.exec(IntellPlus.currentLineSrc);
 	var vIndent = '';
 	if(reRe) {
 		vIndent = reRe[0];
@@ -533,7 +533,7 @@ function fileToCtags( psFileName, psFirst, psFIndex ) {
 	if(gIntelShowParseLine) {
 		//message(vComandLine);    
     }
-	writeToIntellLog('gWshShell.Run: '+vComandLine);
+	//writeToIntellLog('gWshShell.Run: '+vComandLine);
 	
 	gWshShell.Run(vComandLine,0,true);
 	return gFso.FileExists(resFile);
@@ -1088,6 +1088,7 @@ function loadFromFile( psFileName ) {
 //trdm: 2017-12-24 17:51:33
 function loadSettingth() {
 	var iniFileName = gIntelDir + "intell.ini";
+	//debugger; 
 	var text = loadFromFile(iniFileName);
 	if (text) {
 		gSettingsIni = parseINIString(text);
@@ -1210,7 +1211,8 @@ var IntellPlus = {
 	, currentWord: '' 	// текущее распознаваемое выражение
 	, curWordIsActiveX: false 	
 	, curWordType: '' 	// найденный тип текущего выражения
-	, currentLineCl: ''	// Чистая, для доп-разбора
+	, currentLineSrc: ''// Чистая, для доп-разбора
+	, currentLineSrcLeft: ''// Слева от currentWord
 	, curExtension: '' 	// текущее расширение файла
 	, wordIsTemplate: ''// выражение является шаблоном и хочет быть обработано :)
 	, template: '' 		// тело текущего шаблона для подстановки
@@ -1220,10 +1222,14 @@ var IntellPlus = {
 	, intellDebug : false // Для того, что-бы видеть в других скриптах
 	, prepareText : true // Подготавливать тексты
 	, prepareTextKCm : true // KC - KillComments Подготавливать тексты
+	, isNewFile_ : false // не записанный файл
 	// \todo - а если там ссылка на веб, типа https://www.google.com/js/jquery-1.9.1.min.js что делать то???
 	, debugMode : function(){
 		return this.intellDebug;
 	}
+	, isNewFile : function () {
+    	return this.isNewFile_;
+    }
 	, clear : function(){
 		this.curWordIsActiveX = false;
 		this.currentLineNo = '';
@@ -1235,7 +1241,7 @@ var IntellPlus = {
 		this.prepareTextKCm = true;		
 		var view = Editor.currentView;
 		this.currentLine = view.lines.get(view.line).text;
-		this.currentLineCl = this.currentLine;
+		this.currentLineSrc = this.currentLine;
 		this.startLineNo = view.line;
 		this.startColumnNo = view.column;
 
@@ -1245,6 +1251,14 @@ var IntellPlus = {
 		var rv = false;
 		var vCurExtension = this.curExtension;
 		if(vCurExtension == 'php' || vCurExtension.indexOf('php') == 0) {
+			return true;
+		}
+		return false;
+	}
+	, isJavaScript : function () { 
+		var rv = false;
+		var vCurExtension = this.curExtension;
+		if(vCurExtension == 'js') {
 			return true;
 		}
 		return false;
@@ -1272,6 +1286,7 @@ var IntellPlus = {
 		var retVal = "";
 		ext = "";
 		view = Editor.currentView;
+		var vLang = view.lang;
 		curPathFile = view.files[view.file];
 		if (curPathFile != undefined) {
 			len = curPathFile.length-1;
@@ -1292,7 +1307,8 @@ var IntellPlus = {
 		this.curPathFile = curPathFile;
 		retVal = Editor.langs[view.lang];
 		retVal = retVal.toLowerCase();
-		// забывают про этот "язык". :)
+		if (retVal == "javascript") 
+			retVal = "js";		// забывают про этот "язык". :)
 		if (ext == 'vbs') {			
 			this.hasBuiltInTypes = true;
 			retVal = ext; 
@@ -1309,6 +1325,15 @@ var IntellPlus = {
 				retVal = 'js';            
             }
         }
+		this.isNewFile_ = false;
+		if(this.curExtension == this.curFileName && this.curFileName.indexOf("new ") != -1) {
+			this.isNewFile_ = true;
+			/*
+			this.curExtension	"new 1"	String
+			this.curFileName	"new 1"	String
+			*/
+        }
+
 		retVal = retVal.toLowerCase();
 		this.curLang = retVal;
 		
@@ -1321,6 +1346,13 @@ var IntellPlus = {
 	, isWordTemplate : function (psWord) {
 		var vTText = isTemplate(psWord);
 		if(!vTText) return '';
+		if(this.isHtml()) {
+		    if (this.currentLineSrcLeft != '') {
+		        if(strEndWithThis(this.currentLineSrcLeft, '<'+psWord)) {
+					vTText = '';
+                }
+		    } 
+		}
 		this.template = vTText;
 		this.wordIsTemplate = (vTText) ? true : false;
 		this.currentWord = psWord;
@@ -1344,7 +1376,7 @@ var IntellPlus = {
 		var line = currentView.lines.get(view.line).text;
 		var columnChar = line.charAt(Editor.currentView.column-2); // 2 - это конец строки и сам символ.
 		line = line.replace(/[\t]/g,"    ");
-		this.currentLineCl = line;
+		this.currentLineSrc = line;
 		this.currentLine = line;
 		this.currentLine = trimSimple(this.currentLine);
 		// мне не нужна целая строка, достаточно куска до введенного символа
@@ -1399,11 +1431,19 @@ var IntellPlus = {
 			if (!isCharPlus.test(ch))
 				break;				
 			wordBegPos--;
-		}					
+		}		
+	 	if(gIntellDebug) {		debugger;	}	
+			
 		retVal = line.substr(wordBegPos, wordEndPos - wordBegPos + 1);
 		retVal = trimSimple(retVal);
 		// retVal = "if(this.lineMap" - не хорошо, надо подсчитать непарные скобки и убрать их
 		retVal = normalizeCurrentExpression(retVal);
+		if(retVal.length > 1) {
+		    // есть проблема, когда ГОТОВЫЙ тег срабатывает как шаблон: <li|></li> =>> <<li></li>|></li>
+        	this.currentLineSrcLeft = this.currentLineSrc.substr(0,this.startColumnNo);
+			this.currentLineSrcLeft = trim(this.currentLineSrcLeft);
+        }
+		
 		if (checkTemplate){
 			// html>js не отрабатывает trdm 2018-05-26 08:53:22 
 			this.currentWord = retVal;
@@ -1437,8 +1477,9 @@ var IntellPlus = {
 		if(retVal == '"') {
 			retVal = "";
         }
-			
+		this. currentLineSrcLeft = '';
 		this.currentWord = retVal;
+
 		return retVal;		
 	}	
 }
@@ -1475,6 +1516,7 @@ function remoteCommentSLine_js(psAllText) {
           case 'c':
           case 'cpp':
           case 'js':
+          case 'javascript':
 			re = /(\/\/.*)/igm;
             break;
           default:    
@@ -2756,6 +2798,140 @@ function getMethodsForThis(psPosS, psPosE){
 	return rv;
 }
 
+// https://stackoverflow.com/questions/14780350/convert-relative-path-to-absolute-using-javascript/14781678
+function makeAbsolutePath (base, relative) {
+	var vSpliter = "/";
+	if(base.indexOf(vSpliter) == -1) {
+		vSpliter = "\\";
+    }
+    var stack = base.split(vSpliter),
+        parts = relative.split("/");
+		stack.pop(); // remove current file name (or empty string)
+                 // (omit if "base" is the current folder without trailing slash)    
+	if(vSpliter == "/") {    }
+    for (var i=0; i<parts.length; i++) {
+        if (parts[i] == ".")
+            continue;
+        if (parts[i] == "..")
+            stack.pop();
+        else
+            stack.push(parts[i]);
+    }
+    return stack.join("/");
+}
+
+function makeRelativePath(psFrom, psTo) {
+	var rv = psTo;
+	var vSpliter2 = '\\';
+	if(psTo.indexOf('/') != -1) {
+		vSpliter2 = '/';
+    }
+    var vPfPathSrc = gFso.getFile(psFrom).ParentFolder.Path;
+    var vPfPathTo = gFso.getFile(psTo).ParentFolder.Path;
+    if (vPfPathTo.indexOf(vPfPathSrc) != -1){
+        rv = rv.replace(vPfPathSrc+"\\",'');
+        rv = rv.replace('\\','/');
+        return rv;
+    } else {
+		// тут сложнее
+		return rv;
+	}
+	// C:\Мои документы\__Веды+\Цигун\Books\_toHtml\pg0007.html
+	// C:\Мои документы\__Веды+\Цигун\Books\_toHtml\img\Screenshot_001.png
+	var vParts = psFrom.split('\\')
+		, vStack = psTo.split(vSpliter2);
+	var vPart1, vPart2;
+	var vIter = vParts.length;
+	for(var i = 0; i < vIter; i++) {
+		vPart1 = vStack[i];
+		vPart2 = vParts[i];
+		if(vPart1 == vPart2) {
+			vStack.pop();
+        } else {
+			if(vIter > vStack.length) {
+				            
+            }
+		}
+    }
+	rv = vStack.join('/');
+	return rv;
+}
+
+function HtmlIntell() {
+	// todo - нужно реализовать выделение между "" т.е.выделить:
+	//           ______________________
+	// <img src="img/Screenshot_001.png" alt="альтернативный текст"> 
+	// <link href="/css/style.css?nocache=1297683887" rel="stylesheet" type="text/css">
+	// <script type="text/javascript" src="/js/jquery-1.9.1.min.js"></script>
+	var vPlase = {tagName: '', atribName: '', atribVal: ''};
+	var vResult = '';
+	vPlase = htmlGetPlasement();
+	if(vPlase.tagName != '') {
+		if(IntellPlus.debugMode()) {    	debugger;    }
+		
+		if(htmlNeedSelections(vPlase)) {
+		//if(vPlase.atribName == 'src') {
+			//if(vPlase.tagName == 'img' || vPlase.tagName == "") {
+				var vFiltrExam = "Файлы метаданных|*.md|Текстовые файлы (*.txt)|*.txt|Все файлы|*";
+				vFiltrExam = "Рисунки|*.png|Все файлы|*";
+				var vTagNm = vPlase.getTagName();
+				switch(vTagNm) {
+                  case 'a':  
+					vFiltrExam = "Html|*.html|Все файлы|*";
+                    break;
+                  case 'link':
+					vFiltrExam = "css|*.css|Все файлы|*";
+                    break;
+                  case 'audio':
+                  case 'source':
+					vFiltrExam = "mp3|*.mp3|Все файлы|*";
+                    break;
+                  case 'script':
+					vFiltrExam = "js|*.js|Все файлы|*";
+                    break;
+                  default:    
+                }
+				var vCurFile = vPlase.atribVal;
+				vCurFile = trim(vCurFile);
+				
+				if(!vCurFile) {
+					vCurFile = IntellPlus.curPathFile;
+				} else {
+					if(vCurFile.indexOf('/') != -1) {
+						// есть относительные пути
+						vCurFile = makeAbsolutePath(""+IntellPlus.curDirPath, vCurFile);
+                    } else {
+                        var tPath = IntellPlus.curDirPath + vCurFile;
+                        if (gFso.FileExists(tPath)) {
+                            vCurFile = tPath;
+                        }
+                    }
+				} 
+				while (vCurFile.indexOf("/") != -1) {
+				    vCurFile = vCurFile.replace("/","\\");
+				}
+				if (vCurFile)  {
+				    if (!gFso.FileExists(vCurFile)) {
+				        vCurFile = IntellPlus.curPathFile;
+				    }
+				}
+				//vCurFile = IntellPlus.curPathFile; // временное решение, пока не отладится makeAbsolutePath и  makeRelativePath
+				var vFileName = selectExistFileName(vCurFile, vFiltrExam);
+				if(vFileName) {					// message("vFileName-1: "+vFileName);
+					if(gFso.FileExists(vFileName)) {
+						// Нужен относительный путь
+						vFileName = makeRelativePath(IntellPlus.curPathFile, vFileName);
+						vResult = vFileName;
+					
+					}	// message("vFileName-2: "+vFileName);
+				}				
+			//}
+		}        
+	}
+	if(vResult) {
+		Editor.currentView.selection = vResult;
+    }
+}
 
 
 /*	UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU
@@ -2770,7 +2946,8 @@ function getWordList() {
 	var curWord = IntellPlus.getCurWord(); 	
 	if (!curWord) { 
 		if(IntellPlus.isHtml()) {
-        
+			HtmlIntell(); 
+			// \\todo - тормоза, надо отдебажить, но автоподстановка в <img src="img/Screenshot_001.png" alt=""> работает хорошо.
         }
 		/*insertTemplate();*/ 
 		return; 
@@ -2977,8 +3154,6 @@ var mySwitchIntellMode = {
 addHotKey(mySwitchIntellMode); 
 gIntellModeMenuItem = scriptsMenu.addItem(mySwitchIntellMode);
 gIntellModeMenuItem.checked = gIntellEnabled;
-
-
 
 var mySwitchReloadTempl = {
     text: "Перечитать шаблоны", // \tctrl+5",

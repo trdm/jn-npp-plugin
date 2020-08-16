@@ -5,8 +5,9 @@
 //(c)trdmval@gmail.com 2017-12-28 11:23:09
 function timeAddition()
 {
-	var selText = "15, 2.20, 20, 25";// Editor.currentView.selection;
-	selText = Editor.currentView.selection;
+	var selTextOrig,selText = "15, 2.20, 20, 25";// Editor.currentView.selection;
+	selTextOrig = Editor.currentView.selection;
+	selText = selTextOrig;
 	selText = selText.replace("+",",");
 	while(selText.indexOf("+")!= -1) {
 		selText = selText.replace("+",",");
@@ -52,8 +53,20 @@ function timeAddition()
 		resultH = resultH.substring(0,2);
     }
 	tmS = tmS + "."+resultH;
+	IntellPlus.init();
+	//IntellPlus.currentLineSrc
+
+	//debugger;
+	vText = "Time addition(2.45+20 = 3.05)\tCtrl+Shift+D";
+	//2.45+20,3.05 = 6.10 
+	// если выделение - это последний фрагмент в строке, то в принципе можно добавить к строке " = "+tmS
+	var vCurLineTxt = IntellPlus.currentLineSrc;
+	vCurLineTxt = trimRight(vCurLineTxt);
+	var selTextOrig2 = trimRight(selTextOrig);
+	if(strEndWithThis(vCurLineTxt, selTextOrig)) {
+		Editor.currentView.selection = selTextOrig + " = "+tmS;
+    }
 	EditorMessage(selText+" = " + tmS);
-	//alert(selText+" = " + tmS);
 	result = parseFloat(tmS);
 }
 jN.scriptsMenu = (!jN.scriptsMenu) ? {} : jN.scriptsMenu;
@@ -79,7 +92,7 @@ function addHotSym(psFu, psKey) {
 		key: psKey, // "I"
 		cmd: psFu
 	};
-	addHotKey(rv);	
+	addHotKey(rv);	// Различные клавиши 
 }
 
 // Ввоод символов в русской раскладке схема Alt+' >> ' ; Alt+$ >> $. Можно не переключать раскладку.
@@ -88,6 +101,7 @@ function typeSymbol_3() {	typeSymbol( '\'' );} addHotSym(typeSymbol_3,0xDE);
 function typeSymbol_2() {	typeSymbol( '>' );} addHotSym(typeSymbol_2,0xBE);
 function typeSymbol_4() {	typeSymbol( '~' );} addHotSym(typeSymbol_4,0xC0);
 function typeSymbol_5() {	typeSymbol( '$' );} addHotSym(typeSymbol_5,0x34);
+function typeSymbol_6() {	typeSymbol( '#' );} addHotSym(typeSymbol_6,0x33); //########
 
 function calcNoWhiteSpaceSymbolsCount() {
 	//debugger;
@@ -358,7 +372,87 @@ var myfilterTextBySelection= {
 addHotKey(myfilterTextBySelection); 
 scriptsMenu.addItem(myfilterTextBySelection);
 
+var myTestSCI_Hot = {
+    text: "Отфильтровать текст по выделению \tCtrl+Shift+L", // L
+    ctrl: true,
+    shift: true,
+    alt: false,
+    key: 0x4C, // "L"
+    cmd: filterTextBySelection		
+}
 
+function cheskFindResult() {
+	if(IntellPlus.debugMode()) { debugger;  }
+	var curView = Editor.currentView;
+	var vAllText = curView.text;	
+	var vRetVal = '';
+	var vAllTextArr = vAllText.split('\n');
+	var vStr = '', vStr2, vStrArr;
+	for(var i = 0; i< vAllTextArr.length; i++) {
+		vStr = vAllTextArr[i];
+		if(vStr.indexOf(':') == -1) {
+			continue;
+        }
+		vStrArr = vStr.split('.');
+		if(vStrArr.length > 2) {
+			vStr2 = vStrArr[0]+'.'+vStrArr[1];
+			if(vStr.indexOf('гИдентОтчетаВМетаданных') != -1) { 
+				message(vStr);            
+            }
+			if(vStr.indexOf('"'+vStr2+'"') == -1) {
+            }        
+        }
+    }	
+	return vRetVal;
+}
+
+// trdm 2020-02-09 21:00:36 
+function replaceLink() {
+	if(IntellPlus.debugMode()) { debugger;  }
+	var curView = Editor.currentView;
+	var vAllText = curView.text;	
+	var vReg = /(<a\s+href\s*="(http[^"]+)">)/;
+	var vMathes = vReg.exec(vAllText);
+	//	var reRe = re.exec(retVal);
+    var vPgStartNo = 20;
+    var vPgName = 'pg0002.html';
+	while (vMathes != null) {
+		var vRes1 = vMathes[0], vRez2 = vMathes[0];
+		vPgName = 'pg00'+vPgStartNo+'.html';
+		vRes1 = vRes1.replace(vMathes[2],vPgName);
+		
+		vAllText = vAllText.replace(vMathes[0],vRes1);
+		//re = /(\/\*([\s\S]*?)\*\/)/igm; // нужно переинициализировать почему? флаг?
+		vMathes = vReg.exec(vAllText);
+		vPgStartNo++;
+	}
+	
+	curView.text = vAllText;	
+	return true;
+}
+
+function testSquareOpenBracket() {
+	var rv = '';
+	message('testSquareBracket - Ok');
+	return rv;
+}
+var myTestSquareBracketItem = {
+    text: "Тест квадратной скодки \tCtrl+[", // L
+    ctrl: true,
+    shift: false,
+    alt: false,
+    key: 0xDB, // "[{"
+    cmd: cheskFindResult //replaceLink	
+}
+scriptsMenu.addSeparator();
+addHotKey(myTestSquareBracketItem); 
+scriptsMenu.addItem(myTestSquareBracketItem);
+
+/*
+VK_OEM_4 0xDB - Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '[{' key
+VK_OEM_5 0xDC - Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the '\|' key
+VK_OEM_6 0xDD - Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the ']}' key
+*/
 
 /*
 QString Dialog::translateString(const QString &arg1, int var)

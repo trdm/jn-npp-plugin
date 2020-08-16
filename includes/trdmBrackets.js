@@ -1,8 +1,11 @@
-﻿//\todo - D:\Documents and Settings\trdm\Мои документы\Lightshot\Screenshot_56.png
+﻿/*\todo 
+- [ok] D:\Documents and Settings\trdm\Мои документы\Lightshot\Screenshot_56.png
+- Брать настройки из локального каталога проекта. Выработать соглашение о файлах настройки логальных проектов.
+*/
 
 var gBr_js = new ActiveXObject("Scripting.Dictionary");
 var gFso = new ActiveXObject("Scripting.FileSystemObject");
-var gBrFolder = Editor.nppDir +"\\plugins\\jN\\Intell\\\Brackets\\";
+var gBrFolder = Editor.nppDir +"\\plugins\\jN\\jN\\Intell\\\Brackets\\";
 var gCurentFileDirPath = "";
 var gCurentFilePath = "";
 
@@ -88,7 +91,7 @@ function findFileByName(psFolder, psPartFileName, psOpt) {
 	return rv;
 }
 
-function selectExistFileName(values) {
+function selectExistFileName(values, psExtens) {
 	
     try    {
         var sel = new ActiveXObject('Svcsvc.Service')
@@ -98,8 +101,11 @@ function selectExistFileName(values) {
         message(strMess)
         return false;
     }
-	var vFiltrExam = "Файлы метаданных|*.md|Текстовые файлы (*.txt)|*.txt|Все файлы|*";
 	var vFiltr = "Все файлы|*";
+	if(psExtens !== undefined) {
+		vFiltr = psExtens;
+    }
+	var vFiltrExam = "Файлы метаданных|*.md|Текстовые файлы (*.txt)|*.txt|Все файлы|*";
 	try { 
 		retVal = sel.SelectFile(false,values,vFiltr,false); //<< \todo
     } catch(e) {
@@ -169,7 +175,10 @@ function testTranslateTemplate(psTemlp, psSelText) {
 
 function translateTemplate(psStrTempl, psSelText) {
 	var rv = psStrTempl;
-	rv = rv.replace("%datatimemsstr%",formatData(new Date, "yyyyMMdd_HHmmssmis"));
+	var vToday = new Date;
+	rv = rv.replace("%datatimemsstr%",formatData(vToday, "yyyyMMdd_HHmmssmis"));
+	rv = rv.replace("%datatimestr2%",formatData(vToday, "yyyyMMdd_HHmmss"));
+	rv = rv.replace("%datatimes3%",formatData(vToday, "yyMMdd_HHmmss"));
 	rv = rv.replace("%CurentSelText%",gCurentSelText);
 	rv = rv.replace("%CST%",gCurentSelText);
 	var vCurentSelTextEng = getEngTextOnly(gCurentSelText);
@@ -216,29 +225,26 @@ function insertBracket() {
 
 function saveUsingBR( psUBr ) {
 	var pos = -1;
+	if(psUBr == "") {
+		return 0;
+    }
 	if(gLastUsingBr.length == 0) {
 		gLastUsingBr.push(psUBr);
 		return 1;
     }
+    var tStr = psUBr;
+    
 	for(var i = 0; i< gLastUsingBr.length; i++) {
 		if(gLastUsingBr[i] == psUBr) {
-			pos = i;
-			break;
+			continue;
         }
+        tStr = tStr + '\n' + gLastUsingBr[i];
     }
-	if(pos != -1) {
-		gLastUsingBr.slice(pos,1);
-    }
-	gLastUsingBr.reverse();
-	gLastUsingBr.push(psUBr);
-	gLastUsingBr.reverse();
-	
-	var tStr = gLastUsingBr.join('|');
-	//message(tStr);
+    gLastUsingBr = tStr.split('\n');
 	return 1;
 }
 
-function selectBracket() {
+function selectBracket(psWSavePos) {
 	var rv = '';
 	reInitBr();
 	if(gBr_js.Count == 0) {
@@ -246,6 +252,11 @@ function selectBracket() {
     }
 	if(IntellPlus.debugMode()) {
     	debugger;
+    }
+	
+	var vWithSavePos = true;
+	if(psWSavePos !== undefined) {
+		vWithSavePos = psWSavePos;
     }
 	var vKeys = gBr_js.Keys();
 	
@@ -259,6 +270,7 @@ function selectBracket() {
 	
 	for(var i = 0; i< gBr_js.Count; i++) {
 		var frag = vVbsArr[i];
+		frag = trim(frag);
 		if(!arrayContains(gLastUsingBr, frag)) {
         	vStr += frag + "\n";
         }
@@ -266,11 +278,21 @@ function selectBracket() {
 
 	rv = selectValue(vStr.split("\n"),"Выберите скобки!",false, true); // нужен ввод своих значений.
 	if(rv.length > 0) {
+		var vCurentBr_old = gCurentBr;
 		gCurentBr = rv;
-		saveUsingBR(gCurentBr);
+		if(vWithSavePos) {
+			saveUsingBR(gCurentBr);        
+        }
 		insertBracket();
+		if(!vWithSavePos) {
+			gCurentBr = vCurentBr_old;     
+        }
     }
 	return rv;
+}
+
+function selectBracketW() {
+	return selectBracket(false);
 }
 
 function reInitBr() {
@@ -297,6 +319,7 @@ function reInitBr() {
 		var vDelimIndent = "delim=";
 		for(var i = 0; i< vLineAra.length; i++) {
 			vLine = vLineAra[i];
+			vLine = trim(vLine);
 			if(vLine.indexOf(vDelimIndent) != -1) {
 				continue; // пока пропустим 
             }
@@ -329,7 +352,7 @@ if (!jN.scriptsMenu){
 gScriptsMenu.addSeparator(); 
 
 var myInsertBracket = {
-    text: "Выбрать скобки  \tCtrl+B", 
+    text: "Вставить последние 'скобки' \tCtrl+B", 
     ctrl: true,    shift: false,    alt: false,
     key: 0x42, // "B key"
     cmd: insertBracket	
@@ -339,13 +362,22 @@ gScriptsMenu.addItem(myInsertBracket);
 
 
 var mySelectBracket = {
-    text: "Вставить скобки  \tCtrl+Shift+B", 
+    text: "Выбрать и вставить 'скобки' \tCtrl+Shift+B", 
     ctrl: true,    shift: true,    alt: false,
     key: 0x42, // "B key"
     cmd: selectBracket	
 }
 addHotKey(mySelectBracket); 
 gScriptsMenu.addItem(mySelectBracket);
+
+var mySelectBracketW = {
+    text: "Выбрать и вставить 'скобки'-2 \tCtrl+Shift+V", 
+    ctrl: true,    shift: true,    alt: false,
+    key: 0x56, // "V key"
+    cmd: selectBracketW	
+}
+addHotKey(mySelectBracketW); 
+gScriptsMenu.addItem(mySelectBracketW);
 
 
 initBr();

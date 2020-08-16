@@ -4,121 +4,62 @@ var gHelpFolder = Editor.nppDir +"\\plugins\\jN\\help\\";
 var gHelpFolderTFrame = gHelpFolder+'index.html';
 var gHelpFolderBFrame = gHelpFolder+'about.html';
 
-var gHelpDocum = null;
-var gHelpWindow = null;
 
 var gUntilMenu = null; // var gTranslate = Editor.addMenu("MyMemory");
 gUntilMenu = scriptsMenu.addMenu("UntilMenu");
+gUntilMenuCut = gUntilMenu.addMenu("UntilMenuCut");
 
+require("lib/scintilla.js");
+require("lib/Kernel32.dll.js");
 
-
-
-function convertHTML_EntriesCyrilic(psStr) {
-	//trdm: 2018-01-27 15:28:15
+function commentSelection() {
+	// message('commentSelection');
 	//debugger;
-	var vStr1 = '&Agrave;&Aacute;&Acirc;&Atilde;&Auml;&Aring;&die;&AElig;&Ccedil;&Egrave;&Eacute;&Ecirc;&Euml;&Igrave;&Iacute;&Icirc;&Iuml;&Dstrok;&Ntilde;&Ograve;&Oacute;&Ocirc;&Otilde;&Ouml;&times;&Oslash;&Ugrave;&Uacute;&Ucirc;&Uuml;&Yacute;&THORN;&szlig;&agrave;&aacute;&acirc;&atilde;&auml;&aring;&cedil;&aelig;&ccedil;&egrave;&eacute;&ecirc;&euml;&igrave;&iacute;&icirc;&iuml;&eth;&ntilde;&ograve;&oacute;&ocirc;&otilde;&ouml;&divide;&oslash;&ugrave;&uacute;&ucirc;&uuml;&yacute;&thorn;&yuml;'; 
-	var vStr2 = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя'; 
-	var vMap = vStr1.split(';');
-	var rv = psStr, vHr = '';
-	for(var i = 0; i<vMap.length; i++) {
-		var vFragm = vMap[i];
-		vFragm += ';';
-		// Фишка в том, то replace делает только одну замену, что-бы заменить все полностью, надо гонять цикл.
-		while(rv.indexOf(vFragm) != -1) {
-			vHr = vStr2.substring(i,i+1); //vStr2.substring(i,1);
-			rv = rv.replace(vFragm,vHr);			
-        }		
-    }	
-	return rv;	
-}
-
-function processHhcFile(psFName) {
-	// эксплорером пройтись или парсинг устроить с заменой
-	if(!gFso.FileExists(psFName)) {
-		return;
-    }
-	var rv = loadFromFile(psFName);
-	
-	return rv;
-}
-
-function makeHelpDocs() {
 	var rv = '';
-	var vFolderPs = Editor.nppDir +"\\plugins\\jN\\help\\";
-	if(!gFso.FolderExists(vFolderPs)) {
-		return;    
-    }
-	var vFolder = gFso.GetFolder(vFolderPs);
-	if(!vFolder) {
-		return;
-    }
-	debugger;
-	var vTextTframe = '';
-	var vFolCol = new Enumerator(vFolder.SubFolders);
-	vFolCol.moveFirst();
-	while(vFolCol.atEnd() == false) {
-		vSFolder = vFolCol.item();
-		if(vSFolder.ShortName != 'dtree_img') {
-			vFName_HHC = vSFolder.Path+vSFolder.Name+'.hhc';
-			if(gFso.FileExists(vFName_HHC)) {
-				
-            
-            }
-        }
-        vFolCol.moveNext();
-    } 	
-	return rv;
-}
+	var vText = Editor.currentView.selection;
+	var vCommentPhrese = 110;
+	var vTextLines = vText.split('\n');
+	vText = '';
+	for(var i = 0; i<vTextLines.length; i++) {
+		var vLine = vTextLines[i];
 
-//convertHTML_Entries('&Iacute;&aring;&ecirc;&icirc;&ograve;&icirc;&eth;&ucirc;&aring; &icirc;&aacute;&uacute;&aring;&ecirc;&ograve;&ucirc; Automation');
-// "Некоторые объекты Automation"
-// "Некот&icircры &aring; &icirc;бъ&aring;&ecirc;&ograve;&ucirc; Automation"
-
-//var strDoc = '<html><frameset rows = "50%, 50%" border = "6">	<frame src = "T:\\Web\\fr_left.htm"> <frame src = "T:\\Web\\rf_000000.htm" name = "price"></frameset>';
-// done
-function openHelp() {
-	var rv = '';
-	var strDoc = '';
-	if(gHelpWindow) {
-		return;
-    }
-	var option = {		
-		name:'Документация',		
-		docking:'right', 
-		onclose:function(){
-				gHelpWindow = '';
+		var steps = vLine.length / sLen;
+		for (var s = 1; s<=steps; s++){
+			var cPosS = /*s**/sLen;
+			var cPosE = 0; //(s-1)*sLen;
+			while(cPosS > cPosE) {
+				charItem = vLine[cPosS];
+				if (charItem == ' ' || charItem == '\t'){
+					vText +=  trimSimple(vLine.substring(cPosE,cPosS)) +'\n';
+					vLine = vLine.substring(cPosS)+'\n';
+					// vLine[cPosS] = '\n';
+					break;
+				}
+				cPosS--;
 			}
-		};	
-	//debugger;
-	// не хляют для MSIE '++' в пути. дурить начинает. пришлось перенести.
-	//vPath = Editor.nppDir+'\\help\\'; 
-	vPath = 'T:\\NppHelp\\help\\';	
-	gHelpWindow = Editor.createDockable(option);
-	//gHelpWindow.slient = true;
-	var d = gHelpWindow.document;
-	gHelpDocum = d;
-	strDoc = '<html><head></head><frameset rows = "50%, 50%" border = "6">';
-	strDoc +='<frame id = "frame_t" src = "'+vPath+'dtree.html">	<frame id = "frame_b" src = "'+vPath+'b_frame.html" name = "docs">';
-	strDoc +='</frameset><noframes>ваш браузер не поддерживает фреймы</noframes>';
-
-	d.write(strDoc);
-	d.createComment();
-	// Теперь надо заставить IE навигировать на нужную страницу в нижнем фрейме.
-	//el.src = 'T:\\NppHelp\\help\\html\\Automatition\\HTML\\ObjectFSO_1.html';
-	d.close();
+		}
+		vText += trimSimple(vLine) + '\n';		
+    }
+	// Editor.currentView.selection = vText;
 	return rv;
+	
 }
 
-var myHelpOpenCommand = {
-    text: "Справка \tCtrl+F1", 
+var myCommentSelection = {
+    text: "Comment selection \tCtrl+/", 
     ctrl: true,
     shift: false,
     alt: false,
-    key: 0x70, // "F1"
-    cmd: openHelp	
+    key: 0x6F, 
+	/* 
+	/ -> 111 -> 6F
+	* -> 106 -> 6A
+	*/
+    cmd: commentSelection
 };
-// trdm 2018-08-15 07:54:24 - Отключаю, LanguageHelpU.dll - нормально
-//scriptsMenu.addSeparator(); addHotKey(myHelpOpenCommand);  scriptsMenu.addItem(myHelpOpenCommand);
+
+addHotKey(myCommentSelection);  
+gUntilMenuCut.addItem(myCommentSelection);
 
 
 //}trdm: 2018-02-28 13:20:36
@@ -260,14 +201,14 @@ var myKillVeryLengthRows = {
 
 
 addHotKey(myKillVeryLengthRows); 
-gUntilMenu.addItem(myKillVeryLengthRows);
+gUntilMenuCut.addItem(myKillVeryLengthRows);
 
 function rowsOverLengthCut() {	rowsOverLengthRemote(2); }
 var myCutVeryLengthRows = {
     text: "Обрезать строки длинее N ", 
     cmd: rowsOverLengthCut	
 };
-gUntilMenu.addItem(myCutVeryLengthRows);
+gUntilMenuCut.addItem(myCutVeryLengthRows);
 
 
 // trdm 2018-04-10 14:58:14 {
@@ -349,6 +290,106 @@ addHotKey(myDeleteEmptyLines);
 gUntilMenu.addItem(myDeleteEmptyLines);
 
 
+function ApendLines() {
+	alert('Is todo...');
+	return;
+	
+	//debugger;
+	var v8Tab = '\t\t\t\t\t\t\t\t';
+	var vText = Editor.currentView.text;
+	var vTextLines = vText.split('\n');
+	//vTextLines.sort();
+	vText = '';
+	for(var i = 0; i<vTextLines.length; i++) {
+		var vLine = vTextLines[i];
+		while(vLine.indexOf('\t') != -1 ){
+			vLine = vLine.replace('\t','');			
+		}
+		vLine = vLine.replace('\r','');
+		while(vLine.indexOf(' ') != -1 ){
+			vLine = vLine.replace(' ','');
+		}
+		if(vLine.length > 0) {
+			vLine = vTextLines[i];
+			while(vLine.indexOf(v8Tab) == 0){
+				vLine = vLine.replace(v8Tab,'\t');
+			}
+			vText += vLine+'\n';        
+        }
+	}
+	Editor.currentView.text = vText;
+}
+
+var myApendLines = {
+    text: "Дополнить строки  \tCtrl+Shift+A", 
+    ctrl: true,    shift: true,    alt: false,
+    key: 0x41, // "A key"
+    cmd: ApendLines	
+}
+addHotKey(myApendLines); 
+gUntilMenu.addItem(myApendLines);
+
+
+function toUtf8(str){
+	// determine necessary count of bytes 
+	var newlen = Kernel32.WideCharToMultiByte(65001, 0, str, str.length, 0, 0, 0, 0); // 65001 means UTF-8
+
+	// prepare buffer
+	var buf = Kernel32.NativeLibrary.alloc(newlen+1); // returns javascript string of newlen+1
+	Kernel32.NativeLibrary.writeByte(buf, newlen, 0); // terminate encoded string with 0
+
+	// encode string as UTF-8
+	var reallen = Kernel32.WideCharToMultiByte(65001, 0, str, str.length, buf, newlen, 0, 0);
+	return buf;
+}
+
+
+function showAutoComplete(arr){ // Global scope
+	var sci = new Scintilla(currentView.handle);
+
+	var currentSep = String.fromCharCode(sci.Call("SCI_AUTOCGETSEPARATOR",0,0));
+	var list = arr.join(currentSep);
+	var listEncoded = toUtf8(list); // because Scintilla is working internally with UTF-8 
+	
+	sci.Call("SCI_AUTOCSHOW", 0, listEncoded);
+}
+
+
+function VimComplete_js() {
+	//\todo C:\_ProgramF\1Cv77\Bin\Config\scripts\Intellisence\VimComplete.js
+	debugger;
+	var vRetVal = '';
+	var vView  = Editor.currentView;	
+	var vText = vView.text;
+	var regexp = /([A-Za-z0-9]){4,}\w+/gi;
+	var res;
+	var vWord = "";
+	var vDict = new ActiveXObject("Scripting.Dictionary");
+	//vDict.
+	while (res = regexp.exec(vText)) {
+		vWord = res[0];
+		if(vWord.length > 5) {        
+			if(!vDict.Exists(vWord)) {
+				message( vWord);
+				vDict.Add(vWord,vWord)
+			}        
+        }		
+	}
+	var Keys = vDict.Keys();
+	return vRetVal;
+}
+var myVimComplete_js = {
+	// VK_SPACE 0x20 - SPACEBAR
+    text: "VimComplete  \tCtrl+SPACEBAR", 
+    ctrl: true,    shift: false,    alt: false,
+    key: 0x20, // "SPACEBAR"
+    cmd: VimComplete_js	
+}
+//addHotKey(myVimComplete_js); 
+gUntilMenu.addItem(myVimComplete_js);
+
+
+
 function sortLines() {
 	var rv = '';
 	var vText = Editor.currentView.text;
@@ -428,7 +469,7 @@ var myTestCMakeParser = {
     cmd: testCMakeParser
 	
 }
-gUntilMenu.addItem(myTestCMakeParser);
+gUntilMenuCut.addItem(myTestCMakeParser);
 
 
 

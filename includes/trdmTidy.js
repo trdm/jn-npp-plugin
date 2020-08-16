@@ -92,41 +92,78 @@ function formatText(psSelText) {
 	gShell.Run(cmdLine,0,true);
 	
 	rv = loadFromFile(vTempFile2F);
-	var vBodyPresentSrc = psSelText.indexOf('<body>');
-	var vBodyPresent = rv.indexOf('<body>');
-	if(vBodyPresentSrc == -1 && vBodyPresent>0) {    
-		// если добавлены теги. Даже с настройками не хочет убирать разметку.
-		rv = extractNecessaryText(rv);
-    }	
-	
-	gFso.DeleteFile(vTempFile2F);
-	gFso.DeleteFile(vTempFile1F);
+	if (rv ) {
+	    var vBodyPresentSrc = psSelText.indexOf('<body>');
+	    var vBodyPresent = rv.indexOf('<body>');
+	    if(vBodyPresentSrc == -1 && vBodyPresent>0) {    
+		    // если добавлены теги. Даже с настройками не хочет убирать разметку.
+		    rv = extractNecessaryText(rv);
+        }	
+    	
+	    gFso.DeleteFile(vTempFile2F);
+	    gFso.DeleteFile(vTempFile1F);
+	}  else {
+	    rv = '';
+	}
 	return rv;
 }
 
 // форматирование выделения
-function myFormatText() {
-	//debugger;
+function myFormatTextPlus(psLang) {
 	var rv = '';
-	IntellPlus.init();
-	if(! (IntellPlus.curExtension == "html" || IntellPlus.curExtension == "htm")) {
-		return;
-    }
 	var selText = ""; 	
 	var selText = Editor.currentView.selection;
+	var selText2 = '';
+	var useSelection = true;
+	if(selText.length == 0) {
+		useSelection = false;
+		selText = Editor.currentView.text;
+	}
 	if(selText.length > 0) {
-		var selText2 = formatText(selText);
-		if(selText2 != selText) {
-			Editor.currentView.selection = selText2;
+		var selText2 = '';
+		if(psLang == 'html') {
+			selText2 = formatText(selText);
+        } else if(psLang == 'js') {
+			var jsdecoder = new JsDecoder();
+			jsdecoder.s = selText;
+			selText2 = jsdecoder.decode();
+        }
+		if(selText2 != selText && selText2 != '') {
+			if(useSelection) {
+				Editor.currentView.selection = selText2;
+            } else {
+				Editor.currentView.text = selText2;
+			}
         }
     
     }	
 	return rv;
 }
 
+// форматирование выделения
+function myFormatText() {
+	if(IntellPlus.debugMode()) {    	debugger;    }
+	var rv = '';
+	IntellPlus.init();
+	var isNew = IntellPlus.isNewFile();
+	var vLang = 'html';
+	if((IntellPlus.curExtension == "js" || IntellPlus.curLang == "js")){
+		 vLang = 'js';
+	} else 	if((IntellPlus.curExtension == "html" || IntellPlus.curExtension == "htm")) {        
+		vLang = 'html';
+    } else 	if(isNew) {	
+		vLang = 'html';
+    }
+	if(vLang != '') {
+		myFormatTextPlus(vLang);    
+    }
+	return rv;
+}
+
+
 // структура для добавления хоткея и меню
 var myFormatTextCommand = {
-    text: "Форматировать html \tCtrl+Y", 
+    text: "Форматировать \tCtrl+Y", 
     ctrl: true,    shift: false,    alt: false,
     key: 0x59, // "F1"
     cmd: myFormatText

@@ -1,7 +1,9 @@
 ﻿var gFso = new ActiveXObject("Scripting.FileSystemObject");
 var gTempPath = gFso.GetSpecialFolder(2)+'\\'; //alert(gTempPath);
-var gNjPluginDir = Editor.nppDir +"\\plugins\\jN\\";
+/*
+var gNjPluginDir = Editor.nppDir +"\\plugins\\jN\\jN\\";
 var gIntelDir = gNjPluginDir+"Intell\\";
+*/
 
 var gWshNetwork = new ActiveXObject("WScript.Network");
 var gComputerName = gWshNetwork.ComputerName;

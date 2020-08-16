@@ -1,7 +1,7 @@
 ﻿/* Адаптация OLE-ActiveX *.ints Generator: 
 	т.е. intsOLEGenerator.vbs - генератор *.ints файлов для Intellisence
 	
-	© trdm 2005-2018
+	© trdm 2005-2020
 	
 	Для работы данного скрипта требуется библиотека TLBINF32.DLL
 	По последней информации она входит в состав 6-й Визуал студии от microsoft, однако
@@ -19,7 +19,8 @@
 require("lib/Window.js");
 require("lib/User32.dll.js");
 
-var gNjPluginDir = Editor.nppDir +"\\plugins\\jN\\";
+var gNjPluginDir = Editor.nppDir + "\\plugins\\jN\\jN\\";
+//gNjPluginDir = Editor.nppDir + "\\plugins\\jN\\"; // Ситуация при которой возникала ошибка.
 var gFileNameProgIDDumped;
 var gIntelDir2 = gNjPluginDir+"Intell\\"; //_2 = добавочка для тестов. Была. Рискнем продакшинзом....
 var gBinDir = gNjPluginDir;
@@ -45,6 +46,7 @@ function checkLoger() {
 			gLoder.log("Логер скрипта: intelOle.js");	
         } catch(e) {
 			rv = false;
+			gLoder = "";
         }
 	}
 	return rv;
@@ -370,6 +372,7 @@ function ITypeLib() {
 		var File;
 		var vFExist = gFSO.FileExists( FileName );
 		if (!vFExist) {
+			// Тут ошибка возникает, если в FileName - несуществующая дирректория.
 			File = gFSO.CreateTextFile( FileName, false);
 		} 
 		if(vFExist) {              

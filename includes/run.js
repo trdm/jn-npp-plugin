@@ -1,5 +1,13 @@
-﻿(function(){
-	var runMenu = Editor.addMenu("Run");
+﻿// глобальная переменная с меню скриптами.
+if (!jN.scriptsMenu_jN){
+	var scriptsMenu_jN = Editor.addMenu("Скрипты jN");
+	jN.scriptsMenu_jN = scriptsMenu_jN;
+} else { 
+	scriptsMenu_jN = jN.scriptsMenu_jN;
+}
+
+(function(){
+	var runMenu = scriptsMenu_jN.addMenu("Run");
 
 	var rview = {
 		text:"Current View\tF5",
@@ -22,20 +30,6 @@
 	};
 	addHotKey(rsel);
 	runMenu.addItem(rsel);
-
-	var rsel_msg = {
-		text:"Selection\tCtrl+Shift+F5",
-		ctrl:true,
-		shift:true,
-		key:116,
-		cmd: function(){
-			var scr_t = ""+Editor.currentView.selection;
-			var res = ""+eval(scr_t);
-			message(scr_t+" = "+res);
-		}
-	};
-	addHotKey(rsel_msg);
-	runMenu.addItem(rsel_msg);
 
 	var rclip = {
 		text:"Clipboard\tCtrl+F5",

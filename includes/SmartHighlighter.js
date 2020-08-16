@@ -1,3 +1,11 @@
+// глобальная переменная с меню скриптами.
+if (!jN.scriptsMenu_jN){
+	var scriptsMenu_jN = Editor.addMenu("Скрипты jN");
+	jN.scriptsMenu_jN = scriptsMenu_jN;
+} else { 
+	scriptsMenu_jN = jN.scriptsMenu_jN;
+}
+
 (function(){
 
 var settings = GlobalSettings.get("SmartHighlighter")||{mask:0xffffffff};
@@ -13,12 +21,7 @@ function setIndicatorMask(value){
 
 setIndicatorMask(settings.mask);
 
-if (!jN.jNExamplesMenu){
-	var jNExamplesMenu = Editor.addMenu("jN Examples");
-	jN.jNExamplesMenu = jNExamplesMenu;
-}
-
-var smMenu = jN.jNExamplesMenu.addMenu("Smart Highlighter");
+var smMenu = scriptsMenu_jN.addMenu("Smart Highlighter");
 smMenu.addItem({
 	text:"Settings",
 	cmd:function(m){

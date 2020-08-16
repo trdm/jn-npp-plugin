@@ -10,7 +10,7 @@ var gFSO = new ActiveXObject("Scripting.FileSystemObject");
 // trdm 2019-09-11 10:06:44  
 function writeToFileInput(psString) {
 	//var cmdLine = "translateFtF.py -s en -d ru -i \"translateFtF-input.txt\" -o \"translateFtF-out.txt\" \"The text you want to translate.\"";	
-	var vFileNm = Editor.nppDir +"\\plugins\\jN\\system\\translateFtF-input.txt";
+	var vFileNm = Editor.nppDir +"\\plugins\\jN\\jN\\system\\translateFtF-input.txt";
 	var vFile = gFSO.CreateTextFile( vFileNm, true);
 	vFile.Write(psString);
 	vFile.Close();
@@ -34,7 +34,12 @@ function loadFromFileOutput( vFileName ) {
 	return rv;
 }
 
-
+// trdm 2020-01-27 09:24:58  
+function clearBadChar(psStr) {
+	var rv = psStr;
+	rv = rv.replace('’','\'');
+	return rv;
+}
 
 (function(){
 	if (!jN.jNExamplesMenu){
@@ -48,8 +53,41 @@ function loadFromFileOutput( vFileName ) {
 	//var smMenu = jN.jNExamplesMenu.addMenu("Smart Highlighter");
 	
 	var gTranslate = jN.jNExamplesMenu.addMenu("MyMemory"); //	var gTranslate = Editor.addMenu("MyMemory");
-
 	var translate = function (){
+		if (Editor.currentView.selection.length > 0){
+			if (!this.xmlHttp){
+				this.xmlHttp = new ActiveXObject("Microsoft.XMLHTTP");
+			}
+			var xmlHttp = this.xmlHttp;
+			if (xmlHttp){
+				xmlHttp.open('GET', 'http://mymemory.translated.net/api/get?q='+encodeURIComponent(Editor.currentView.selection)+'&langpair='+this.langPair, true);
+				xmlHttp.onreadystatechange = function () {
+					if (xmlHttp.readyState == 4 && xmlHttp.responseText) {
+						try{
+							var tr = eval("("+xmlHttp.responseText+")").responseData.translatedText;
+							
+							switch(GetMode()){
+								case "show": alert(tr); break;
+								case "replace":currentView.selection = tr; break;
+								case "clipboard": clipBoard = tr; break;								
+								case "message": message(tr); break;
+								
+							}
+								
+						}catch(e){
+							alert("Error");
+						}
+					}
+				};
+				xmlHttp.send(null);
+			}
+		} else {
+			alert("Nothing to translate");
+		}		
+	}
+
+	var translate2 = function (){
+		// trdm 2020-07-14 08:50:15 - пока отключим. 
 		if (Editor.currentView.selection.length > 0){
 			if (!this.xmlHttp){
 				this.xmlHttp = new ActiveXObject("Microsoft.XMLHTTP");
@@ -57,6 +95,7 @@ function loadFromFileOutput( vFileName ) {
 			}
 			//this.xmlHttp.setRequestHeader(,)
 			var textForUrlSrc = Editor.currentView.selection;
+			textForUrlSrc = clearBadChar(textForUrlSrc);
 			var textForUrl = encodeURIComponent(textForUrlSrc);
 			
 			var ya_key = "trnsl.1.1.20180821T031903Z.0b6df18e08f92862.737deb2f96d854e571a96b189f14961a3dbb5f4a";
@@ -69,13 +108,14 @@ function loadFromFileOutput( vFileName ) {
 			// {trdm 2019-09-11 10:09:30  
 			var xmlHttp = 0;
 			var gWshShell = new ActiveXObject("WScript.Shell");
-			gWshShell.CurrentDirectory = Editor.nppDir +"\\plugins\\jN\\system\\";
+			gWshShell.CurrentDirectory = Editor.nppDir +"\\plugins\\jN\\jN\\system\\";
 			writeToFileInput(textForUrlSrc);			
 			var vComandLine = "translateFtF.py -s en -d ru -i \"translateFtF-input.txt\" -o \"translateFtF-out.txt\" \"The text you want to translate.\"";
 			gWshShell.Run(vComandLine,0,true);
 			vComandLine = "utf8_w1251.exe translateFtF-out.txt translateFtF-out2.txt";
 			gWshShell.Run(vComandLine,0,true);
 			var textTranslated = loadFromFileOutput();
+			//message("src: " + textForUrlSrc);
 			message("Translated: " + textTranslated);
 			return;
 			// }trdm 2019-09-11 10:09:30  

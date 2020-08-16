@@ -1,10 +1,14 @@
+// глобальная переменная с меню скриптами.
+if (!jN.scriptsMenu_jN){
+	var scriptsMenu_jN = Editor.addMenu("Скрипты jN");
+	jN.scriptsMenu_jN = scriptsMenu_jN;
+} else { 
+	scriptsMenu_jN = jN.scriptsMenu_jN;
+}
+
+
 (function(){
-	if (!jN.jNExamplesMenu){
-		var jNExamplesMenu = Editor.addMenu("jN Examples");
-		jN.jNExamplesMenu = jNExamplesMenu;
-	}
-	var incMenu = jN.jNExamplesMenu.addMenu("Includes");
-	
+	var incMenu = scriptsMenu_jN.addMenu("Includes");
 
 	var includeDir = require.currentDir+"\\includes";
 	var fso = new ActiveXObject("Scripting.FileSystemObject");

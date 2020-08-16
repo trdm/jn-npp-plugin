@@ -15,8 +15,8 @@ function reQuerty(psString) {
 	var en_crs = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM";
 	var ru_crs = "йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ";
 	
-	var ru = " йцукенгшщзхъфывапролджэячсмитьбю.ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ.";
-	var en = " qwertyuiop[]asdfghjkl;'zxcvbnm,..QWERTYUIOP[]ASDFGHJKL;'ZXCVBNM,./";
+	var ru = " йцукенгшщзхъфывапролджэячсмитьбю.ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ.:";
+	var en = " qwertyuiop[]asdfghjkl;'zxcvbnm,..QWERTYUIOP[]ASDFGHJKL;'ZXCVBNM,./^";
 	
 	var conv_fr = en;
 	var conv_to = ru;
@@ -59,7 +59,7 @@ function myPutnoSwitcher() {
 }
 
 var myPutnoSwitcherItem = {
-    text: "Putno switcher\tF6", 
+    text: "Punto switcher\tF6", 
     ctrl: false,
     shift: false,
     alt: false,
