@@ -60,15 +60,23 @@ function clearBadChar(psStr) {
 			}
 			var xmlHttp = this.xmlHttp;
 			if (xmlHttp){
-				xmlHttp.open('GET', 'http://mymemory.translated.net/api/get?q='+encodeURIComponent(Editor.currentView.selection)+'&langpair='+this.langPair, true);
+				var vCurText = Editor.currentView.selection;
+				xmlHttp.open('GET', 'http://mymemory.translated.net/api/get?q='+encodeURIComponent(vCurText)+'&langpair='+this.langPair, true);
 				xmlHttp.onreadystatechange = function () {
 					if (xmlHttp.readyState == 4 && xmlHttp.responseText) {
 						try{
 							var tr = eval("("+xmlHttp.responseText+")").responseData.translatedText;
+							var vCurMode = GetMode();
+							if(vCurText.length<50) { // trdm 2020-09-01 08:59:12  
+								if(vCurMode != "append") {
+									tr = vCurText + ": "+tr;
+                                }
+                            }
 							
-							switch(GetMode()){
+							switch(vCurMode){
 								case "show": alert(tr); break;
 								case "replace":currentView.selection = tr; break;
+								case "append":currentView.selection = currentView.selection + " - "+tr; break;
 								case "clipboard": clipBoard = tr; break;								
 								case "message": message(tr); break;
 								
@@ -230,6 +238,7 @@ function clearBadChar(psStr) {
 
 	CreateMenu("Show","show");
 	CreateMenu("Replace Selection","replace");
+	CreateMenu("Append Selection","append");
 	CreateMenu("Copy to clipboard","clipboard");
 	CreateMenu("Messages","message");
 

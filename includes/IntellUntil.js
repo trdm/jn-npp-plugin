@@ -23,7 +23,7 @@ function commentSelection() {
 	for(var i = 0; i<vTextLines.length; i++) {
 		var vLine = vTextLines[i];
 
-		var steps = vLine.length / sLen;
+		var steps = vLine.length / vCommentPhrese;
 		for (var s = 1; s<=steps; s++){
 			var cPosS = /*s**/sLen;
 			var cPosE = 0; //(s-1)*sLen;
@@ -326,8 +326,10 @@ var myApendLines = {
     key: 0x41, // "A key"
     cmd: ApendLines	
 }
+/* 
 addHotKey(myApendLines); 
 gUntilMenu.addItem(myApendLines);
+*/
 
 
 function toUtf8(str){
@@ -356,36 +358,68 @@ function showAutoComplete(arr){ // Global scope
 
 
 function VimComplete_js() {
-	//\todo C:\_ProgramF\1Cv77\Bin\Config\scripts\Intellisence\VimComplete.js
-	debugger;
 	var vRetVal = '';
+	//\todo C:\_ProgramF\1Cv77\Bin\Config\scripts\Intellisence\VimComplete.js
+	if(IntellPlus.debugMode()) {    	debugger;    }
+	var vCurWord = IntellPlus.getCurWordSimple(); 	
+	if(vCurWord == '') {
+		//return vRetVal;    
+    }
+	var vCurWordLc = vCurWord;
+	vCurWordLc.toLowerCase();
+	//message( vCurWord );
+	
+
 	var vView  = Editor.currentView;	
 	var vText = vView.text;
-	var regexp = /([A-Za-z0-9]){4,}\w+/gi;
+	var regexp = /([\w\dА-я0-9]){4,}\w+/gi;
+	regexp = /([\w\dА-я0-9]){4,}/gi;
 	var res;
-	var vWord = "";
+	var vWord = "", vWordLc = '';
+	var vOk = false;
+	var vAra = [];
 	var vDict = new ActiveXObject("Scripting.Dictionary");
 	//vDict.
 	while (res = regexp.exec(vText)) {
 		vWord = res[0];
-		if(vWord.length > 5) {        
+		if(vWord.length > 4) {        
+			vOk = false;
 			if(!vDict.Exists(vWord)) {
-				message( vWord);
-				vDict.Add(vWord,vWord)
+				if(vCurWord.length > 0) {					
+					vWordLc = vWord;
+					vWordLc.toLowerCase();
+					vOk = false;
+					if(vWord.length > vCurWord.length) {
+						if(vCurWordLc == vWordLc.substr(0,vCurWordLc.length)) {
+							vOk = true;
+						}
+					}
+                } else {
+					vOk = true;
+				}					
+				if(vOk) {                
+					//message( vWord);
+					vAra[vAra.length] = vWord;
+					vDict.Add(vWord,vWord)
+                }
 			}        
-        }		
-	}
-	var Keys = vDict.Keys();
+        }
+    }
+	if(vAra.length > 0) {
+		vAra.sort();
+		showAutoComplete(vAra);
+    }
 	return vRetVal;
 }
 var myVimComplete_js = {
 	// VK_SPACE 0x20 - SPACEBAR
-    text: "VimComplete  \tCtrl+SPACEBAR", 
+    //text: "VimComplete  \tCtrl+SPACEBAR", 
+    text: "VimComplete  \tCtrl+L", 
     ctrl: true,    shift: false,    alt: false,
-    key: 0x20, // "SPACEBAR"
+    key: 0x4C, // "L"
     cmd: VimComplete_js	
 }
-//addHotKey(myVimComplete_js); 
+addHotKey(myVimComplete_js); 
 gUntilMenu.addItem(myVimComplete_js);
 
 

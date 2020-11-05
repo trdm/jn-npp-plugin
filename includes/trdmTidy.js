@@ -1,8 +1,8 @@
 ﻿var gFso = new ActiveXObject("Scripting.FileSystemObject");
-var gTempFolder = Editor.nppDir +"\\plugins\\jN\\Intell\\";
+var gTempFolder = Editor.nppDir +"\\plugins\\jN\\jN\\Intell\\";
 var gTidyConfig = "tidy_config.txt";
-var gTidyConfigFPath = Editor.nppDir +"\\plugins\\jN\\Intell\\"+gTidyConfig;
-var gTidyExe = Editor.nppDir +"\\plugins\\jN\\system\\tidy.exe";
+var gTidyConfigFPath = Editor.nppDir +"\\plugins\\jN\\jN\\Intell\\"+gTidyConfig;
+var gTidyExe = Editor.nppDir +"\\plugins\\jN\\jN\\system\\tidy.exe";
 var gShell = new ActiveXObject("WScript.Shell");
 
 
@@ -124,9 +124,15 @@ function myFormatTextPlus(psLang) {
 		if(psLang == 'html') {
 			selText2 = formatText(selText);
         } else if(psLang == 'js') {
+			//https://github.com/butlerwang/jsdecoder
 			var jsdecoder = new JsDecoder();
 			jsdecoder.s = selText;
 			selText2 = jsdecoder.decode();
+        } else if(psLang == 'css') {
+			//https://github.com/butlerwang/jsdecoder
+			var vFormater = new cssFormater();
+			vFormater.s = selText;
+			selText2 = vFormater.FormatCSS();
         }
 		if(selText2 != selText && selText2 != '') {
 			if(useSelection) {
@@ -147,10 +153,12 @@ function myFormatText() {
 	IntellPlus.init();
 	var isNew = IntellPlus.isNewFile();
 	var vLang = 'html';
-	if((IntellPlus.curExtension == "js" || IntellPlus.curLang == "js")){
+	if((IntellPlus.curExtension == "js" || IntellPlus.curLang == "js" /*|| IntellPlus.curLang == "css"*/ /* ломает css*/)){
 		 vLang = 'js';
 	} else 	if((IntellPlus.curExtension == "html" || IntellPlus.curExtension == "htm")) {        
 		vLang = 'html';
+	} else 	if((IntellPlus.curExtension == "css")) {        
+		vLang = 'css';
     } else 	if(isNew) {	
 		vLang = 'html';
     }
@@ -246,7 +254,7 @@ function myFormatHtmlFiles() {
 }
 
 var myFormatTextCommand = {
-    text: "Форматировать *.html (тек.дир) \tCtrl+true+Y", 
+    text: "Форматировать *.html (тек.дир) \tCtrl+shift+Y", 
     ctrl: true,    shift: true,    alt: false,
     key: 0x59, // "Y"
     cmd: myFormatHtmlFiles

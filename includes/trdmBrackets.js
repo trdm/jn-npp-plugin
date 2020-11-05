@@ -350,7 +350,7 @@ if (!jN.scriptsMenu){
 }
 
 gScriptsMenu.addSeparator(); 
-
+gBrMenu = gScriptsMenu.addMenu('Скобки');
 var myInsertBracket = {
     text: "Вставить последние 'скобки' \tCtrl+B", 
     ctrl: true,    shift: false,    alt: false,
@@ -358,7 +358,7 @@ var myInsertBracket = {
     cmd: insertBracket	
 }
 addHotKey(myInsertBracket); 
-gScriptsMenu.addItem(myInsertBracket);
+gBrMenu.addItem(myInsertBracket);
 
 
 var mySelectBracket = {
@@ -368,7 +368,7 @@ var mySelectBracket = {
     cmd: selectBracket	
 }
 addHotKey(mySelectBracket); 
-gScriptsMenu.addItem(mySelectBracket);
+gBrMenu.addItem(mySelectBracket);
 
 var mySelectBracketW = {
     text: "Выбрать и вставить 'скобки'-2 \tCtrl+Shift+V", 
@@ -377,8 +377,16 @@ var mySelectBracketW = {
     cmd: selectBracketW	
 }
 addHotKey(mySelectBracketW); 
-gScriptsMenu.addItem(mySelectBracketW);
+gBrMenu.addItem(mySelectBracketW);
 
+function OpenBrFolder() {
+	goToFile(gBrFolder);
+}
+var myOpenBrFolder = {
+    text: "Открыть каталог настройки ", // +gBrFolder, 
+    cmd: OpenBrFolder
+}
+gBrMenu.addItem(myOpenBrFolder);
 
 initBr();
 //selectBracket();

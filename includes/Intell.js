@@ -3148,7 +3148,10 @@ var mySwitchIntellMode = {
     shift: false,
     alt: false,
     key: 0x77,
-    cmd: switchIntellMode
+    cmd: switchIntellMode,
+	prompt: "Функция switchIntellMode"
+	
+
 };
 
 addHotKey(mySwitchIntellMode); 
@@ -3166,4 +3169,3 @@ var mySwitchReloadTempl = {
 }
 addHotKey(mySwitchReloadTempl); 
 gIntellReLoadTemplatesMenuItem = scriptsMenu.addItem(mySwitchReloadTempl);
-// а мне норм, я уже на 1588 строке....  

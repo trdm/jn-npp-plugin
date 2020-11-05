@@ -154,9 +154,9 @@ function gotoAnyHtmlTag() {
 // +trdm }
 
 // ***********************************************************************
-function listFunctions () { // Главная функция скрипта.
 // "Список функций\tCtrl+1",    
-// ***********************************************************************
+//
+function listFunctions () { // Главная функция скрипта.
 	try { 		if(IntellPlus.intellDebug) {	debugger;       }    } catch(e) {    }
     var funcList = new Array;
     var funcLines = {};
@@ -182,6 +182,8 @@ function listFunctions () { // Главная функция скрипта.
 				}				
 			}
 		}
+	} else if(IntellPlus.curExtension == 'txt') {
+		
 	}
 	if(standartParse) {
 		//var lines = StringUtils.toLines(Editor.currentView.text);        
@@ -366,14 +368,22 @@ function goToFile(psCurFilePath, psLine ) {
 	if(psLine === undefined) {
 		line = 0;
     }
+	WshShell = new ActiveXObject("WScript.Shell");
     if (gFso.FileExists(psCurFilePath)) {
 		addToHistory(); 
-		open(psCurFilePath);
+		//open(psCurFilePath);
+		WshShell.Run(psCurFilePath);
 		try { 
 			Editor.currentView.lines.current = line;
         } catch(e) {
         }
         return true;
+    } else if(gFso.FolderExists(psCurFilePath)) {
+		addToHistory(); 
+		//WshShell.Run('explorer /e,/root,"'+psCurFilePath+'"');
+		WshShell.Run('explorer "'+psCurFilePath+'"');
+    } else if(psCurFilePath.indexOf('://') != -1) {		
+		WshShell.Run(psCurFilePath);
     }
     return false;
 }
@@ -496,7 +506,12 @@ function attemptToMoveToFile() {
 			    vLine = trim(vLine);
    				if(gFso.FileExists(vLine)) {
    				    return goToFile(vLine);
-			    }
+			    } else if (gFso.FolderExists(vLine)) {
+					return goToFile(vLine);
+				} else if(vLine.indexOf('://') != -1) { // ссылка
+					return goToFile(vLine);
+                }
+				
 			} 			 
 		}
 		return true;
@@ -544,7 +559,9 @@ function attemptToMoveToFile() {
 	return rv;
 }
 
-
+function tryToMoveToFile() {
+	return attemptToMoveToFile();
+}
 // F12
 function goToDefinition() {
 	var sucsess  = false;
