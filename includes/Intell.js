@@ -97,6 +97,7 @@
 require("lib/Window.js");
 require("lib/scintilla.js");
 require("lib/User32.dll.js");
+require("lib/ECMA262.js");
 
 //debugger;
 var gJsLvalDict; 
@@ -1199,7 +1200,7 @@ function normalizeCurrentExpression(psCW) {
 }
 // класс накопления и обработки информации для поиска методов текущего выражения
 var IntellPlus = {
-	  curChar : ""
+    curChar: ""
 	, enabled: '' 		// активна технология
 	, startLineNo: '' 	// стартовая строка, номер.
 	, startColumnNo: '' 	// стартовая строка, номер.
@@ -1209,7 +1210,8 @@ var IntellPlus = {
 	, curFileName: '' 	// текущий файл имя
 	, curDirPath: '' 	// текущая директорий
 	, currentWord: '' 	// текущее распознаваемое выражение
-	, curWordIsActiveX: false 	
+	, curWordIsActiveX: false
+	, curPostFix: ''    // Для Перем++ >> Перем = Перем + ... 	// trdm 2020-11-03 18:00:15  
 	, curWordType: '' 	// найденный тип текущего выражения
 	, currentLineSrc: ''// Чистая, для доп-разбора
 	, currentLineSrcLeft: ''// Слева от currentWord
@@ -1219,269 +1221,288 @@ var IntellPlus = {
 	, curLang: '' 		// язык для поиска. Понадобится когда будем работать во фрагментах html | php
 	, hasBuiltInTypes: false// язык для поиска. Понадобится когда будем работать во фрагментах html | php
 	, includedFileList: '' // список инклюдов для разбора и поиска методов
-	, intellDebug : false // Для того, что-бы видеть в других скриптах
-	, prepareText : true // Подготавливать тексты
-	, prepareTextKCm : true // KC - KillComments Подготавливать тексты
-	, isNewFile_ : false // не записанный файл
-	// \todo - а если там ссылка на веб, типа https://www.google.com/js/jquery-1.9.1.min.js что делать то???
-	, debugMode : function(){
-		return this.intellDebug;
+	, intellDebug: false // Для того, что-бы видеть в других скриптах
+	, prepareText: true // Подготавливать тексты
+	, prepareTextKCm: true // KC - KillComments Подготавливать тексты
+	, isNewFile_: false // не записанный файл
+    // \todo - а если там ссылка на веб, типа https://www.google.com/js/jquery-1.9.1.min.js что делать то???
+	, debugMode: function() {
+	    return this.intellDebug;
 	}
-	, isNewFile : function () {
-    	return this.isNewFile_;
-    }
-	, clear : function(){
-		this.curWordIsActiveX = false;
-		this.currentLineNo = '';
-		this.wordIsTemplate = false;
-		this.template = '';		
-		this.curChar = '';
-		this.currentWord = '';		
-		this.prepareText = true;
-		this.prepareTextKCm = true;		
-		var view = Editor.currentView;
-		this.currentLine = view.lines.get(view.line).text;
-		this.currentLineSrc = this.currentLine;
-		this.startLineNo = view.line;
-		this.startColumnNo = view.column;
+	, isNewFile: function() {
+	    return this.isNewFile_;
+	}
+	, clear: function() {
+	    this.curWordIsActiveX = false;
+	    this.currentLineNo = '';
+	    this.wordIsTemplate = false;
+	    this.template = '';
+	    this.curChar = '';
+	    this.currentWord = '';
+	    this.prepareText = true;
+	    this.prepareTextKCm = true;
+	    var view = Editor.currentView;
+	    this.currentLine = view.lines.get(view.line).text;
+	    this.currentLineSrc = this.currentLine;
+	    this.startLineNo = view.line;
+	    this.startColumnNo = view.column;
+		this.curPostFix = '';
 
 	}
-	, isActiveX : function() {    	return this.curWordIsActiveX;    }
-	, isPhp : function () { 
-		var rv = false;
-		var vCurExtension = this.curExtension;
-		if(vCurExtension == 'php' || vCurExtension.indexOf('php') == 0) {
-			return true;
-		}
-		return false;
+	, isActiveX: function() { return this.curWordIsActiveX; }
+	, isPhp: function() {
+	    var rv = false;
+	    var vCurExtension = this.curExtension;
+	    if (vCurExtension == 'php' || vCurExtension.indexOf('php') == 0) {
+	        return true;
+	    }
+	    return false;
 	}
-	, isJavaScript : function () { 
-		var rv = false;
-		var vCurExtension = this.curExtension;
-		if(vCurExtension == 'js') {
-			return true;
-		}
-		return false;
+	, isJavaScript: function() {
+	    var rv = false;
+	    var vCurExtension = this.curExtension;
+	    if (vCurExtension == 'js') {
+	        return true;
+	    }
+	    return false;
 	}
-	, isHtml : function () { 
-		var rv = false;
-		var vCurExtension = this.curExtension;
-		if(vCurExtension == 'html' || vCurExtension.indexOf('htm') == 0) {
-			return true;
-		}
-		return false;
+	, isHtml: function() {
+	    var rv = false;
+	    var vCurExtension = this.curExtension;
+	    if (vCurExtension == 'html' || vCurExtension.indexOf('htm') == 0) {
+	        return true;
+	    }
+	    return false;
 	}
-	, getComentChar : function(){
-		var retVal = '//';
-		if(IntellPlus.curLang == 'vbs') {
-			retVal = "'";
-		} else if(IntellPlus.curLang == 'bat' || IntellPlus.curLang == 'cmd') {
-			retVal = "rem";
-        }
-		return retVal;
+	, getComentChar: function() {
+	    var retVal = '//';
+	    if (IntellPlus.curLang == 'vbs') {
+	        retVal = "'";
+	    } else if (IntellPlus.curLang == 'bat' || IntellPlus.curLang == 'cmd') {
+	        retVal = "rem";
+	    }
+	    return retVal;
 	}
 
-	, getCurExtension : function(){
-		//todo. придумать как. Функция работает для целосных файлов. А для сегментных, HTML, PHP - не работает.
-		var retVal = "";
-		ext = "";
-		view = Editor.currentView;
-		var vLang = view.lang;
-		curPathFile = view.files[view.file];
-		if (curPathFile != undefined) {
-			len = curPathFile.length-1;
-			cChar = curPathFile.charAt(len);			
-			while (cChar != '.' && len >= 0) {
-				ext = cChar + ext;
-				len = len - 1;
-				cChar = curPathFile.charAt(len);			
-			}
-			ext = ext.toLowerCase();
-			var araFD = curPathFile.split('\\');
-			this.curFileName = araFD[araFD.length-1];
-			araFD[araFD.length-1] = '';
-			this.curDirPath = araFD.join('\\');
-			this.curExtension = ext;
-		}
-		this.includedFileList = new Array;
-		this.curPathFile = curPathFile;
-		retVal = Editor.langs[view.lang];
-		retVal = retVal.toLowerCase();
-		if (retVal == "javascript") 
-			retVal = "js";		// забывают про этот "язык". :)
-		if (ext == 'vbs') {			
-			this.hasBuiltInTypes = true;
-			retVal = ext; 
-			this.prepareText = false;
-			this.prepareTextKCm = true;
-		} else if(ext == '1s') { 
-			retVal = ext; 
-		} else if(ext == 'js') { 
-			this.hasBuiltInTypes = true;
-		} 
-		if(ext == 'html' || ext == 'htm' ) {
-			// проверить не стоит ли курсор в тексте между <script </script>
-			if(cursorInScriptByHtml(view.text)) {
-				retVal = 'js';            
-            }
-        }
-		this.isNewFile_ = false;
-		if(this.curExtension == this.curFileName && this.curFileName.indexOf("new ") != -1) {
-			this.isNewFile_ = true;
-			/*
-			this.curExtension	"new 1"	String
-			this.curFileName	"new 1"	String
-			*/
-        }
+	, getCurExtension: function() {
+	    //todo. придумать как. Функция работает для целосных файлов. А для сегментных, HTML, PHP - не работает.
+	    var retVal = "";
+	    ext = "";
+	    view = Editor.currentView;
+	    var vLang = view.lang;
+	    curPathFile = view.files[view.file];
+	    if (curPathFile != undefined) {
+	        len = curPathFile.length - 1;
+	        cChar = curPathFile.charAt(len);
+	        while (cChar != '.' && len >= 0) {
+	            ext = cChar + ext;
+	            len = len - 1;
+	            cChar = curPathFile.charAt(len);
+	        }
+	        ext = ext.toLowerCase();
+	        var araFD = curPathFile.split('\\');
+	        this.curFileName = araFD[araFD.length - 1];
+	        araFD[araFD.length - 1] = '';
+	        this.curDirPath = araFD.join('\\');
+	        this.curExtension = ext;
+	    }
+	    this.includedFileList = new Array;
+	    this.curPathFile = curPathFile;
+	    retVal = Editor.langs[view.lang];
+	    retVal = retVal.toLowerCase();
+	    if (retVal == "javascript")
+	        retVal = "js";
+	    // забывают про этот "язык". :)
+	    if (ext == 'vbs') {
+	        this.hasBuiltInTypes = true;
+	        retVal = ext;
+	        this.prepareText = false;
+	        this.prepareTextKCm = true;
+	    } else if (ext == '1s') {
+	        retVal = ext;
+	    } else if (ext == 'js') {
+	        this.hasBuiltInTypes = true;
+	        this.prepareText = false;
+	    }
+	    if (ext == 'html' || ext == 'htm') {
+	        // проверить не стоит ли курсор в тексте между <script </script>
+	        if (cursorInScriptByHtml(view.text)) {
+	            retVal = 'js';
+	        }
+	    }
+	    this.isNewFile_ = false;
+	    if (this.curExtension == this.curFileName && this.curFileName.indexOf("new ") != -1) {
+	        this.isNewFile_ = true;
+	        /*
+	        this.curExtension	"new 1"	String
+	        this.curFileName	"new 1"	String
+	        */
+	    }
 
-		retVal = retVal.toLowerCase();
-		this.curLang = retVal;
-		
-		return retVal;
-	}
-	, init : function(){
-		this.clear();
-		this.getCurExtension();
-	}
-	, isWordTemplate : function (psWord) {
-		var vTText = isTemplate(psWord);
-		if(!vTText) return '';
-		if(this.isHtml()) {
-		    if (this.currentLineSrcLeft != '') {
-		        if(strEndWithThis(this.currentLineSrcLeft, '<'+psWord)) {
-					vTText = '';
-                }
-		    } 
-		}
-		this.template = vTText;
-		this.wordIsTemplate = (vTText) ? true : false;
-		this.currentWord = psWord;
-		return psWord;		
-    }
-	, getCurWordSimple : function () {
-		this.init();
-    	var rv = getWordUnderCursor(Editor.currentView); // funclist.js
-		this.currentWord = rv;
-    	return rv;
-    }
-	, getCurWord : function(){		// 	  document.| где: | - позиция курсора, 
-		this.init();
-		
-		/* Бага сработало в строке: "    vFName = gIntelDir+'\\js.|';"		| - позиция сработки...		*/
-		// todo: надо отключить в комментариях. Опционально конечно.		
-		var retVal = "";
-		view  = Editor.currentView;
-		
-		this.startLineNo = view.line;
-		var line = currentView.lines.get(view.line).text;
-		var columnChar = line.charAt(Editor.currentView.column-2); // 2 - это конец строки и сам символ.
-		line = line.replace(/[\t]/g,"    ");
-		this.currentLineSrc = line;
-		this.currentLine = line;
-		this.currentLine = trimSimple(this.currentLine);
-		// мне не нужна целая строка, достаточно куска до введенного символа
-		lLine = line.substring(0,view.column);
-		line = lLine;
-		
-		var isChar = /[\w\dА-я@$_]/; // только символы строк
-		var isCharPlus = /([\w\dА-я@\(\)\.$_])/; // только символы строк + символы: '().$_'
-		var isNotAlf = /([\(\)\.])/;
-		// страховка от срабатывания в строке.
-		line = line.replace(/('.*')/g,""); line = line.replace(/(".*")/g,"");
-		//if (line.indexOf(lLine) == -1) return "";
-		
-		line = getCleanString(line);		
-		var wordBegPos = line.length-1;
-		var wordEndPos = wordBegPos;
-		
-		var checkTemplate = false;
-		
-		//if(gIntellDebug) {	debugger;	}	
-		this.curChar  = /*columnChar; */ line.charAt(wordBegPos);
-		if (this.curChar == '.')  {
-			wordEndPos = wordEndPos - 1;
-			if (wordEndPos < 0) {
-				return "";
-			}
-		} else if (this.curChar == '"'){
-		    // Может курсор тут: "var gWSH = new ActiveXObject("|" | - позиция курсора
-		    var ara = line.split(' ');
-		    retVal = ara[ara.length-1];
-		    retVal = retVal.replace('(','').replace('"','');
-		    retVal = retVal.toLowerCase();
-		    if (retVal == "activexobject" || retVal == "createobject") {
-		        this.currentWord = retVal;
-		        return retVal;
-		    }
-		} else if(this.curChar == " " || this.curChar == "	"/*'\t'*/){
-			// это может быть шаблон
-			if(this.curChar == " ") {
-				--wordBegPos;
-            } else if(this.curChar == "	"/*'\t'*/) {
-				// лшучше прочитать настройки.
-            	for(var it = 0; it<= 4; it++) {		--wordBegPos;	}
-            }  
-			checkTemplate = true;			
-		} else {
-			return "";
-		}
-			
-		while (wordBegPos >= 0) {
-		    var ch = line.charAt(wordBegPos - 1);
-			if (!isCharPlus.test(ch))
-				break;				
-			wordBegPos--;
-		}		
-	 	if(gIntellDebug) {		debugger;	}	
-			
-		retVal = line.substr(wordBegPos, wordEndPos - wordBegPos + 1);
-		retVal = trimSimple(retVal);
-		// retVal = "if(this.lineMap" - не хорошо, надо подсчитать непарные скобки и убрать их
-		retVal = normalizeCurrentExpression(retVal);
-		if(retVal.length > 1) {
-		    // есть проблема, когда ГОТОВЫЙ тег срабатывает как шаблон: <li|></li> =>> <<li></li>|></li>
-        	this.currentLineSrcLeft = this.currentLineSrc.substr(0,this.startColumnNo);
-			this.currentLineSrcLeft = trim(this.currentLineSrcLeft);
-        }
-		
-		if (checkTemplate){
-			// html>js не отрабатывает trdm 2018-05-26 08:53:22 
-			this.currentWord = retVal;
-			retVal = this.isWordTemplate(retVal);
-			return retVal;
-			//ащк 
-		}
-		
-		if (retVal.indexOf('.') == -1){
-			if(isNotAlf.test(retVal)){
-				// перечитаем, точки нет, но есть скобки, не хорошо
-				wordBegPos = line.length-1;
-				wordEndPos = wordBegPos;
-				while (wordBegPos >= 0) {
-					var ch = line.charAt(wordBegPos - 1);
-					if (!isChar.test(ch))
-						break;				
-					wordBegPos--;
-				}					
-				retVal = line.substr(wordBegPos, wordEndPos - wordBegPos + 1);
-				// Бывае застревает непарная точка сзади. Уберем.
-				//while(retVal.substring(retVal.length))
-				rr = retVal.substring(retVal.length-1);
-				while(rr == '.'){
-					retVal = retVal.substring(0,retVal.length-1);
-					rr = retVal.substring(retVal.length-1);
-				}
-					
-			}
-		}
-		if(retVal == '"') {
-			retVal = "";
-        }
-		this. currentLineSrcLeft = '';
-		this.currentWord = retVal;
+	    retVal = retVal.toLowerCase();
+	    this.curLang = retVal;
 
-		return retVal;		
-	}	
+	    return retVal;
+	}
+	, init: function() {
+	    this.clear();
+	    this.getCurExtension();
+	}
+	, isWordTemplate: function(psWord) {
+	    var vTText = isTemplate(psWord);
+	    if (!vTText) return '';
+	    if (this.isHtml()) {
+	        if (this.currentLineSrcLeft != '') {
+	            if (strEndWithThis(this.currentLineSrcLeft, '<' + psWord)) {
+	                vTText = '';
+	            }
+	        }
+	    }
+	    this.template = vTText;
+	    this.wordIsTemplate = (vTText) ? true : false;
+	    this.currentWord = psWord;
+	    return psWord;
+	}
+	, getCurWordSimple: function() {
+	    this.init();
+	    var rv = getWordUnderCursor(Editor.currentView); // funclist.js
+	    this.currentWord = rv;
+	    return rv;
+	}
+	, getCurWord: function() {		// 	  document.| где: | - позиция курсора, 
+	    this.init();
+
+	    /* Бага сработало в строке: "    vFName = gIntelDir+'\\js.|';"		| - позиция сработки...		*/
+	    // todo: надо отключить в комментариях. Опционально конечно.		
+	    var retVal = "";
+	    view = Editor.currentView;
+
+	    this.startLineNo = view.line;
+	    var line = currentView.lines.get(view.line).text;
+	    var columnChar = line.charAt(Editor.currentView.column - 2); // 2 - это конец строки и сам символ.
+	    line = line.replace(/[\t]/g, "    ");
+	    this.currentLineSrc = line;
+	    this.currentLine = line;
+	    this.currentLine = trimSimple(this.currentLine);
+	    // мне не нужна целая строка, достаточно куска до введенного символа
+	    lLine = line.substring(0, view.column);
+	    line = lLine;
+
+	    var isChar = /[\w\dА-я@$_]/; // только символы строк
+	    var isCharPlus = /([\w\dА-я@\(\)\.$_])/; // только символы строк + символы: '().$_'
+	    var isNotAlf = /([\(\)\.])/;
+	    // страховка от срабатывания в строке.
+	    line = line.replace(/('.*')/g, ""); line = line.replace(/(".*")/g, "");
+	    //if (line.indexOf(lLine) == -1) return "";
+
+	    line = getCleanString(line);
+	    var wordBegPos = line.length - 1;
+	    var wordEndPos = wordBegPos;
+
+	    var checkTemplate = false;
+	    var vPostFix = '';
+	    //if(gIntellDebug) {	debugger;	}	
+	    this.curChar = /*columnChar; */line.charAt(wordBegPos);
+	    if (this.curChar == '.') {
+	        wordEndPos = wordEndPos - 1;
+	        if (wordEndPos < 0) {
+	            return "";
+	        }
+	    } else if (this.curChar == '"') {
+	        // Может курсор тут: "var gWSH = new ActiveXObject("|" | - позиция курсора
+	        var ara = line.split(' ');
+	        retVal = ara[ara.length - 1];
+	        retVal = retVal.replace('(', '').replace('"', '');
+	        retVal = retVal.toLowerCase();
+	        if (retVal == "activexobject" || retVal == "createobject") {
+	            this.currentWord = retVal;
+	            return retVal;
+	        }
+	    } else if (this.curChar == " " || this.curChar == "	"/*'\t'*/) {
+	        // это может быть шаблон
+	        if (this.curChar == " ") {
+	            --wordBegPos;
+	        } else if (this.curChar == "	"/*'\t'*/) {
+	            // лшучше прочитать настройки.
+	            for (var it = 0; it <= 4; it++) { --wordBegPos; }
+	        }
+	        checkTemplate = true;
+	    } else if (this.curChar == "+" || this.curChar == "-" || this.curChar == "*") {
+	        vPostFix = this.curChar;
+	        //--wordBegPos;
+	        var vChar2 = line.charAt(wordBegPos - 1);
+	        if ((vChar2 == "+" || vChar2 == "-" || vChar2 == "*") && vPostFix == vChar2) {
+	            vPostFix = vChar2 + vPostFix;
+	            --wordBegPos;
+	            wordEndPos = wordEndPos - 2;
+				this.curPostFix = vPostFix;
+				//view.anchor = view.anchor - 2;
+	            // Значит у нас конструкция Перем++ | Перем** | Перем-- и надо её превратить в Перем = Перем - (Курсор)
+	        } else {
+	            return "";
+	        }
+
+
+	    } else {
+	        return "";
+	    }
+
+	    while (wordBegPos >= 0) {
+	        var ch = line.charAt(wordBegPos - 1);
+	        if (!isCharPlus.test(ch))
+	            break;
+	        wordBegPos--;
+	    }
+	    //if (gIntellDebug) { debugger; }
+
+	    retVal = line.substr(wordBegPos, wordEndPos - wordBegPos + 1);
+	    retVal = trimSimple(retVal);
+	    // retVal = "if(this.lineMap" - не хорошо, надо подсчитать непарные скобки и убрать их
+	    retVal = normalizeCurrentExpression(retVal);
+	    if (retVal.length > 1) {
+	        // есть проблема, когда ГОТОВЫЙ тег срабатывает как шаблон: <li|></li> =>> <<li></li>|></li>
+	        this.currentLineSrcLeft = this.currentLineSrc.substr(0, this.startColumnNo);
+	        this.currentLineSrcLeft = trim(this.currentLineSrcLeft);
+	    }
+
+	    if (checkTemplate) {
+	        // html>js не отрабатывает trdm 2018-05-26 08:53:22 
+	        this.currentWord = retVal;
+	        retVal = this.isWordTemplate(retVal);
+	        return retVal;
+	        //ащк 
+	    }
+
+	    if (retVal.indexOf('.') == -1) {
+	        if (isNotAlf.test(retVal)) {
+	            // перечитаем, точки нет, но есть скобки, не хорошо
+	            wordBegPos = line.length - 1;
+	            wordEndPos = wordBegPos;
+	            while (wordBegPos >= 0) {
+	                var ch = line.charAt(wordBegPos - 1);
+	                if (!isChar.test(ch))
+	                    break;
+	                wordBegPos--;
+	            }
+	            retVal = line.substr(wordBegPos, wordEndPos - wordBegPos + 1);
+	            // Бывае застревает непарная точка сзади. Уберем.
+	            //while(retVal.substring(retVal.length))
+	            rr = retVal.substring(retVal.length - 1);
+	            while (rr == '.') {
+	                retVal = retVal.substring(0, retVal.length - 1);
+	                rr = retVal.substring(retVal.length - 1);
+	            }
+
+	        }
+	    }
+	    if (retVal == '"') {
+	        retVal = "";
+	    }
+	    this.currentLineSrcLeft = '';
+	    this.currentWord = retVal;
+
+	    return retVal;
+	}
 }
 
 //trdm 2017-12-23 19:58:50
@@ -1928,6 +1949,13 @@ function killApostroff(psStr) {
 function getSimleType_js(psCurWord, psAllText) {
 	gSearchCount++;
 	vCurWord = psCurWord;
+	var retVal = "";
+	var curLang = 'js';
+	curLang = IntellPlus.curLang;
+	if(!(curLang == 'js' || curLang == 'php' || curLang == 'vbs')) {
+		return;    
+    }
+	
 	if(vCurWord[0]=='$') {
 		// У js RegExpr $ - управляющий символ.
 		vCurWord = vCurWord.substr(1);
@@ -1939,9 +1967,6 @@ function getSimleType_js(psCurWord, psAllText) {
 	
 	if (vCurWord == "") return "";
 	
-	var retVal = "";
-	var curLang = 'js';
-	curLang = IntellPlus.curLang;
 	bi_types = getBuiltInTypes(curLang);
 	if (bi_types.Exists(vCurWord)){
 		return vCurWord;
@@ -2001,16 +2026,15 @@ function getSimleType_js(psCurWord, psAllText) {
 	for (var iL = vTLLen; iL>=0; iL-- ) {
 		if(gIntelShowParseLine) { status('Parse: '+iL+' line ');	 }
 		
-		if(IntellPlus.startLineNo == iL) {
-			if(IntellPlus.debugMode()) {
-				debugger;
-            }
-        } 
-		
 
 		IntellPlus.currentLineNo = iL;
 		var tLine = vTextLines[iL];	//	alert(tLine);
 		tLine = trimSimple(tLine);
+		if(IntellPlus.startLineNo == iL) {
+			if(IntellPlus.debugMode()) {
+				debugger;
+            }
+        } 		
 		if (tLine == '') continue;
 		if (!/[\w\dА-я$_]/.test(tLine)) continue;
 		tLine = killApostroff(tLine);
@@ -2047,10 +2071,14 @@ function getSimleType_js(psCurWord, psAllText) {
 				} else if (tCharOne == '['){   retVal = "Array";
 				} else {
 					retVal = normalizeString(retVal); // todo ломает  uStrung.substring().split(). //<< сломалось, не хочет join
-				    iLLast = iL; // Для восстановления сканирования с предыдущей строки.
-					vType = getTypeFromLongDot(retVal, allText);
-					retVal = vType;
-					iL = iLLast;
+					if(retVal != 'null') {
+						iLLast = iL; // Для восстановления сканирования с предыдущей строки.
+						vType = getTypeFromLongDot(retVal, allText);
+						retVal = vType;
+						iL = iLLast;
+                    } else {
+						retVal = '';
+					}
 				}
 			}
 		}
@@ -2058,10 +2086,20 @@ function getSimleType_js(psCurWord, psAllText) {
 			var reResu = reLValWe.exec(tLine);
 			if (reResu != null) {
 				retVal = ''+getTypeFromLvalUni(reResu[1],1);
-				if(retVal) return retVal;
+				if(retVal) {
+					if(IntellPlus.debugMode()) {
+						debugger;
+					}					
+					return retVal;
+				}
 			}
 		}		
-		if (retVal) break;
+		if (retVal) {
+			if(IntellPlus.debugMode()) {
+				debugger;
+            }			
+			break;
+		}
 	}
 	// Настала очередь ctags?
 	if(retVal != ""){
@@ -2429,7 +2467,7 @@ function goToDefinitionsByCtagsGlobal(psCurScr, psFileName) {
 	return rerVal;
 }
 var listScriptsObjectsItem = {
-    text: "Список объектов\tCtrl+2", 
+    text: "Список объектов (Intell.js)\tCtrl+2", 
     ctrl: true,
     shift: false,
     alt: false,
@@ -2445,7 +2483,7 @@ function selectGoToDefinitionCurFile() {
 }
 
 var selectGoToDefinitionCurFileItem = {
-    text: "Список объектов тек.файла\tCtrl+3", 
+    text: "Список объектов тек.файла (Intell.js)\tCtrl+3", 
     ctrl: true,
     shift: false,
     alt: false,
@@ -2739,9 +2777,9 @@ function checkUpdateScopeMapCtags() {
 
 function getMembersFromCtags() {
 	var rv = '';
-	// возможно имеем лело с переменной, объявленной как var curWord = {} или с классом, возвращаемыйм функцией.			
-	if(gIntellDebug) { 
-		//debugger; 
+	// возможно имеем лело с переменной, объявленной как var curWord = {} или с классом, возвращаемыйм функцией.
+	if (gIntellDebug) { 
+			debugger; 
 	}
 	var vFName = IntellPlus.curPathFile;
 	var vArrFilePath = getThisScopeFiles(vFName);
@@ -2933,6 +2971,16 @@ function HtmlIntell() {
     }
 }
 
+function getMembersFromSql() {
+ 	if(gIntellDebug) {
+		debugger;
+	}	
+	var vRetVal = '';
+	//\todo -  кончил тут 2020-11-05 01:27:12   
+	//IntellPlus.
+	
+	return vRetVal;
+}// getMembersFromSql()
 
 /*	UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU
 	Основная процедура запуска скрипта. Обеспечивает распознавание возможности коде-комплита, 
@@ -2958,7 +3006,7 @@ function getWordList() {
 		if (IntellPlus.wordIsTemplate) {
 			return insertTemplate();
 		}
-		if(!(cLang == "vbs" || cLang == 'html' || cLang == 'php')) {
+		if(!(cLang == "vbs" || cLang == 'html' || cLang == 'php' || cLang == 'sql')) {
 			//trdm: 2018-03-08 16:47:22
 			// Попробуем релизовать автодополнение в html
 			return; 
@@ -2991,10 +3039,18 @@ function getWordList() {
 	if (IntellPlus.currentLine == '') {
 		/*insertTemplate();*/		
 		return;
+	//} else if (IntellPlus.){
+	} else if (cLang == 'sql'){
+		Methods = getMembersFromSql();
 	} else if (isWordCreateObj(curWord)){
-		ProgIdS = loadFromFile(gIntelFileOTD);
-	} else if (curWord == 'this'){
-	    Methods = getMembersFromCtags();
+	    ProgIdS = loadFromFile(gIntelFileOTD);
+	} else if (IntellPlus.curPostFix.length > 0) { // trdm 2020-11-03 18:07:14  
+		if(curWord.length > 0) {
+			currentView.anchor = currentView.anchor - 2;
+        }
+        attrib = ' = '+curWord+' '+ IntellPlus.curPostFix[0]+' 1;';
+    } else if (curWord == 'this') {
+        Methods = getMembersFromCtags();
 	} else if (!Methods){
 		var typeCWD = getSimleType_js(curWord, allText);
 		if (!typeCWD){
