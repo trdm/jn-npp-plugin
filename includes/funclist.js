@@ -24,6 +24,7 @@
 // trdm todo: Надо сделать настройку сортировки списка функций.
 
 //(function() {
+var gCurrentLang = '';
 
 var PATTERNS = new Array;
 //function addSearchPattern(pattern, nameIndex, classIndex) {
@@ -36,10 +37,13 @@ addSearchPattern(/\s*[\w\dА-я]+\s+([\w\dА-я]+[\:]{2,2}[\w\dА-я]+[\(]+)/i, 
 addSearchPattern(/[\s+|,]([\w\dА-я]+)\s*[\:]\s*function\s*\(/i, 1, 0);; // trdm|js fore: getCells:function(isOn, indicatorNr)
 addSearchPattern(/[\s+|,]this\.([\w\dА-я]+)\s*[\=]\s*function\s*\(/i, 1, 0);; // trdm|js fore: getCells:function(isOn, indicatorNr)
 addSearchPattern(/[\s+|^]*Template\:([\w\dА-я]+)/i, 1, 0);; 	// trdm для файлов *.tmpl
-// this.getLastClassPosLine = function (psLine, psScrFName) { <<< \todo - не ищет //trdm: 2018-01-18 08:03:36 
 //addSearchPattern(/\s*процедура|Функция\s+([\w\dА-я0-9]+)\(/i, 1, 0); // trdm|1s
 addSearchPattern(/(Процедура|Функция\s+([a-zа-яё_]+))\s*[\(]+/igm, 1, 0); // trdm|1s
 // todo для *.1s надо использовать Скрипт=СоздатьОбъект("MSScriptControl.ScriptControl"); и парсить регулярками из vbs
+
+var PATTERNS_sql = new Array;
+addSearchPatternTo(/\s*create\s+table\s+([\w\dА-я]+)/i,1,0,PATTERNS_sql);
+
 
 /* \todo трдм можно организовать полный JUMP _HISTORY, у которого будет сохраняться история 
 ну скажем 50 последних перемещений и будет список выбора для прыжка и можно будет не
@@ -161,8 +165,11 @@ function listFunctions () { // Главная функция скрипта.
     var funcList = new Array;
     var funcLines = {};
 	var standartParse = true;
+	var vSearchPatterns = PATTERNS;
 	
 	IntellPlus.init();
+	gCurrentLang = IntellPlus.curExtension;
+	
 	if(IntellPlus.curExtension == "1s" || IntellPlus.curExtension == "bsl") { 
 		var listStr = getObjectListFromFileByCtags(IntellPlus.curPathFile);
 		if(listStr) {			
@@ -183,7 +190,8 @@ function listFunctions () { // Главная функция скрипта.
 			}
 		}
 	} else if(IntellPlus.curExtension == 'txt') {
-		
+	} else if(IntellPlus.curExtension == 'sql') {
+		vSearchPatterns = PATTERNS_sql;
 	}
 	if(standartParse) {
 		//var lines = StringUtils.toLines(Editor.currentView.text);        
@@ -194,7 +202,7 @@ function listFunctions () { // Главная функция скрипта.
 			line = lines.get(lineNo).text;
 			line = killComment(line);
 			if(line == '') {			continue;        }
-			var func = checkForFuncDef(line);
+			var func = checkForFuncDefWith(line, vSearchPatterns);
 			if (func)
 			{
 				funcList.push(func);
@@ -206,6 +214,7 @@ function listFunctions () { // Главная функция скрипта.
 			}
 		}
     }
+	
 	funcList.sort();
     var vCaption = "Выберите функцию (funclist.js)";
 	// if(Editor.currentView.) { }  надо получить текущее расширение и если это *.tmpl, то писать :"Выберите шаблон"
@@ -251,23 +260,13 @@ function VBScriptRegExpr(psPatern, psText) {
 }
 
 
-function checkForFuncDef(line) {
+function checkForFuncDefWith(line,ara) {
     function g(i, m) { return i && m.length > i ? m[i] : ''; }
 	vLine = line;
-	// неудачная попытка.... :(((((((((((((
-	//vLine = right
-	// var vPFPatern = '';
-	// vPFPatern = "[\s|^](Процедура|Функция|Procedure|Function)\s+([a-zA-zа-яА-Я0-9_]+)\s";
-	// vPFPatern = "(Процедура|Функция|Procedure|Function)\s+([a-z\w0-9_]+)\s*";
-	// vPFPatern = Intell_1251.searchProcPatern;
-	// var res = VBScriptRegExpr(vPFPatern,line);    
-	// if(res) {
-		// return res;
-    // }
 	
-    for(var i=0; i<PATTERNS.length; i++) 
+    for(var i=0; i<ara.length; i++) 
     {        
-        var pattern = PATTERNS[i];
+        var pattern = ara[i];
         var matches = vLine.match(pattern.re);
         if (matches)
         {
@@ -278,26 +277,37 @@ function checkForFuncDef(line) {
             }
         }
     }
-	// проблема. Когда у нас модуль в Utf-8, а 1Сv8 выгружает модули(bsl) именно в этой кодировке, то регулярки не пашут. :((((((((((
-	var vPFArra = new Array("Процедура","Функция");
-	var vNlArra = new Array("+",";","[","]","(",")","+","-","*"); // no letters
-	var vArItem = strContains(vLine, vPFArra);
-	if(vArItem != "") {
-		var funcName = strBetween(vLine, vArItem, "(");
-		// "addSearchPattern(/(Процедура|Функция\s+([a-zа-яё_]+))\s*[\(]+/igm, 1, 0); " <<<< вот такой "возврат" получили
-		if(!strContains(funcName, vNlArra)) {
-			funcName = trimSimple(funcName);
-			return funcName;        
-        }
+	//if(IntellPlus.curExtension == "1s" || IntellPlus.curExtension == "bsl") {
+	if(IntellPlus.curExtension == gCurrentLang || IntellPlus.curExtension == gCurrentLang) {
 		
+		// проблема. Когда у нас модуль в Utf-8, а 1Сv8 выгружает модули(bsl) именно в этой кодировке, то регулярки не пашут. :((((((((((
+		var vPFArra = new Array("Процедура","Функция");
+		var vNlArra = new Array("+",";","[","]","(",")","+","-","*"); // no letters
+		var vArItem = strContains(vLine, vPFArra);
+		if(vArItem != "") {
+			var funcName = strBetween(vLine, vArItem, "(");
+			// "addSearchPattern(/(Процедура|Функция\s+([a-zа-яё_]+))\s*[\(]+/igm, 1, 0); " <<<< вот такой "возврат" получили
+			if(!strContains(funcName, vNlArra)) {
+				funcName = trimSimple(funcName);
+				return funcName;        
+			}
+			
+		}
     }
     return '';
 }
-//checkForFuncDef(Intell_1251.searchProcLine);
 
 function addSearchPattern(pattern, nameIndex, classIndex) {
             
     PATTERNS.push({
+        're': pattern,
+        'nameIndex': nameIndex,
+        'classIndex': classIndex
+    });
+}
+function addSearchPatternTo(pattern, nameIndex, classIndex, arra) {
+            
+    arra.push({
         're': pattern,
         'nameIndex': nameIndex,
         'classIndex': classIndex
@@ -371,12 +381,17 @@ function goToFile(psCurFilePath, psLine ) {
 	WshShell = new ActiveXObject("WScript.Shell");
     if (gFso.FileExists(psCurFilePath)) {
 		addToHistory(); 
-		//open(psCurFilePath);
-		WshShell.Run(psCurFilePath);
-		try { 
-			Editor.currentView.lines.current = line;
-        } catch(e) {
-        }
+		if(line != 0) {
+			open(psCurFilePath);
+			try { 			Editor.currentView.lines.current = line;        } catch(e) {        }
+        } else {
+			WshShell.Run(psCurFilePath);  
+			// вот тут не будем, похоже плохо отрабатывает.
+			// try { 			Editor.currentView.lines.current = line;        } catch(e) {        }
+			
+			
+		}
+		
         return true;
     } else if(gFso.FolderExists(psCurFilePath)) {
 		addToHistory(); 
