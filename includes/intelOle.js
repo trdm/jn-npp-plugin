@@ -174,7 +174,8 @@ function tryReadRegKey(psRKey){
 
 function trimSimple( psLine ) {	
 	var re = new RegExp("^[\\s]+|[\\s]+$", 'g');
-	return psLine.replace(re, '');
+	var vLine = ""+psLine;
+	return vLine.replace(re, '');
 }
 
 function Asc(psChar) {	return psChar.charCodeAt(0);}

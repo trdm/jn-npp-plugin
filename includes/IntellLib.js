@@ -1,3 +1,6 @@
+var gIntell_engLetersAll = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM";
+var gIntell_rusLetersAll = "יצףךוםדרשחץתפûגאןנמכהז‎ÿקסלטעüב‏ÉÖÓÊÅÍÃØÙÇÕÚÔÛÂÀÏÐÎËÄÆÝ‗×ÑÌÈÒÜÁÞ";
+
 
 // trdm 2018-12-25 08:11:41 
 function indexOfArray(psStr, psAra) {

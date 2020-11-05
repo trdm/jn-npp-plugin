@@ -33,7 +33,12 @@ function saveToFile(psDumpString, psFileName){
 		File = File0.OpenAsTextStream(8);
 
 	}
-	File.WriteLine(psDumpString);
+	try { 
+		File.WriteLine(psDumpString);
+    } catch(e) {
+		message(psDumpString);
+		message(e.name);
+    }
 	File.Close();
 }
 
