@@ -297,16 +297,16 @@ function JsDecoder()
             this.i += re1.exec(part)[1].length;
             this.write('else if');
             this.lastWord = 'if';
-            //debug(this.getCurrentLine(), 're1');
+            //debug_this(this.getCurrentLine(), 're1');
             this.fixSub('else if');
-            //debug(this.getCurrentLine(), 're1 after');
+            //debug_this(this.getCurrentLine(), 're1 after');
         } else if (re2.test(part)) {
             this.i += re2.exec(part)[1].length;
             this.write('else');
             this.lastWord = 'else';
-            //debug(this.getCurrentLine(), 're2');
+            //debug_this(this.getCurrentLine(), 're2');
             this.fixSub('else');
-            //debug(this.getCurrentLine(), 're2 after');
+            //debug_this(this.getCurrentLine(), 're2 after');
         }
     };
     this.bracketOn = function ()
@@ -398,7 +398,7 @@ function JsDecoder()
     };
     this.combineSub = function ()
     {
-        //debug(this.orig_code, 'orig_code');
+        //debug_this(this.orig_code, 'orig_code');
         for (i = 0; i < this.code.length; i++) {
             var line = this.orig_code[this.orig_row];
             if (0 == i && line.length) {
@@ -410,8 +410,8 @@ function JsDecoder()
                 this.orig_code[this.orig_row+i] = this.code[i];
             }
         }
-        //debug(this.code, 'sub_code');
-        //debug(this.orig_code, 'code');
+        //debug_this(this.code, 'sub_code');
+        //debug_this(this.orig_code, 'code');
     };
     this.fixSub = function (keyword)
     {
@@ -427,7 +427,7 @@ function JsDecoder()
 
         var firstWord = this.nextWord();
 
-        //debug(this.code, 'fixSub('+keyword+') start');
+        //debug_this(this.code, 'fixSub('+keyword+') start');
 
         this.orig_i = this.i;
         this.orig_lvl = this.lvl;
@@ -521,8 +521,8 @@ function JsDecoder()
                             this.write(c);
                             this.combineSub();
                             this.restoreOrig(true);
-                            //debug(this.code, 'fixSub('+keyword+') b2 return');
-                            //debug(this.s.charAt(this.i), ' b2 current char');
+                            //debug_this(this.code, 'fixSub('+keyword+') b2 return');
+                            //debug_this(this.s.charAt(this.i), ' b2 current char');
                             return;
                         }
                         // do not restore orig i
@@ -530,15 +530,15 @@ function JsDecoder()
                         this.combineSub();
                         this.restoreOrig(true);
                         this.fixSub('if');
-                        //debug(this.code, 'fixSub('+keyword+') b2 return');
+                        //debug_this(this.code, 'fixSub('+keyword+') b2 return');
                         return;
                     }
                     break;
                 case '[': b3++; break;
                 case ']': b3--; break;
                 case ';':
-                    //debug(this.getCurrentLine(), 'semicolon');
-                    //debug([b1, b2, b3]);
+                    //debug_this(this.getCurrentLine(), 'semicolon');
+                    //debug_this([b1, b2, b3]);
                     if (0 == b1 && 0 == b2 && 0 == b3 && this.lvl == this.orig_lvl && 'if' != firstWord) {
                         found = true;
                     }
@@ -571,8 +571,8 @@ function JsDecoder()
             this.len = this.s.length;
         }
 
-        //debug("{\n" + this.code.join("\n") + '}', 'fixSub('+keyword+') result');
-        //debug(found, 'found');
+        //debug_this("{\n" + this.code.join("\n") + '}', 'fixSub('+keyword+') result');
+        //debug_this(found, 'found');
 
         this.restoreOrig(false);
     };
@@ -803,8 +803,8 @@ function JsDecoder()
                 escaped = false;
             }
         }
-        //debug(this.getCurrentLine(), 'quotation');
-        //debug(this.s.charAt(this.i), 'char');
+        //debug_this(this.getCurrentLine(), 'quotation');
+        //debug_this(this.s.charAt(this.i), 'char');
     };
     this.lineComment = function ()
     {
@@ -1118,8 +1118,9 @@ function str_repeat(str, repeat)
 }
 
 var debug_w;
-function debug (arr, name)
+function debug_this (arr, name)
 {
+	debugger;
     if (!debug_w) 
     {
         var width = 600;
