@@ -74,7 +74,8 @@ function extractNecessaryText(psText) {
 	}
 	return rv;
 }
-
+// trdmTidy.js
+// trdm 2019-03-10 15:40:14  
 function formatText(psSelText) {
 	var rv = psSelText;
 	if(!gFso.FileExists(gTidyExe)) {
