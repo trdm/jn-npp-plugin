@@ -22,7 +22,6 @@
 	Версия: 0.1.99
 	Версия внутр.: $Revision: 0.99 $
 	Автор: Трошин Дмитрий, trdmval@gmail.com, skype: trdmval
-	Поддержать проект: яндекс-кошелек 410015947831889
 	Функционал:
 	- подсказка по методам и свойствам встроенных объектов языка javascript	
 	
@@ -541,7 +540,10 @@ function fileToCtags( psFileName, psFirst, psFIndex ) {
 }
 
 function getShortFileName(psFName){
-	var ara = psFName.split('\\');
+    var ara = psFName.split('\\');
+    if (psFName.indexOf('/') != -1) {
+        ara = psFName.split('/');
+    }
 	return ara[ara.length-1];
 }
 
@@ -634,6 +636,9 @@ function ScriptMap(scrname){
 	this.line = 0;  		// текущая строка
 	this.parent = 0; // ScopeMap
 	var Arr = scrname.split('\\');
+	if (scrname.indexOf('/') != -1) {
+	    Arr = scrname.split('/');
+	}
 	this.name = Arr[Arr.length-1];
 	this.addVar 	 = function(psVName) {    	addClassUnique(this.vars, psVName); 	this.registerPosition(psVName);   }
 	this.addFunction = function(psFName) {    	addClassUnique(this.functions, psFName);this.registerPosition(psFName);    }	
@@ -821,6 +826,24 @@ function ScopeMap(sname,psPath){
             }			
         }
     	return rv;
+    }
+	this.getAllClasses = function() {
+		// fore 'new' statement
+    	var rv = new Array;
+    	var cls = '';
+		for(var i = 0; i< this.scripts.length; i++) {
+			scr = this.scripts[i];
+			if(scr) {
+				for(var ii = 0; ii< scr.classes.length; ii++) {
+					cls = scr.classes[ii];
+					if(cls.name.indexOf('Anonymous') == -1) { // Anonymous - don't need                  
+						rv.push(cls.name);
+                    }
+                }
+            }			
+        }
+		rv.sort();
+    	return rv.join('\n');
     }
 } // ScopeMap
 
@@ -1246,7 +1269,7 @@ var IntellPlus = {
 	    this.currentLineSrc = this.currentLine;
 	    this.startLineNo = view.line;
 	    this.startColumnNo = view.column;
-		this.curPostFix = '';
+	    this.curPostFix = '';
 
 	}
 	, isActiveX: function() { return this.curWordIsActiveX; }
@@ -1435,8 +1458,8 @@ var IntellPlus = {
 	            vPostFix = vChar2 + vPostFix;
 	            --wordBegPos;
 	            wordEndPos = wordEndPos - 2;
-				this.curPostFix = vPostFix;
-				//view.anchor = view.anchor - 2;
+	            this.curPostFix = vPostFix;
+	            //view.anchor = view.anchor - 2;
 	            // Значит у нас конструкция Перем++ | Перем** | Перем-- и надо её превратить в Перем = Перем - (Курсор)
 	        } else {
 	            return "";
@@ -1469,6 +1492,11 @@ var IntellPlus = {
 	        // html>js не отрабатывает trdm 2018-05-26 08:53:22 
 	        this.currentWord = retVal;
 	        retVal = this.isWordTemplate(retVal);
+	        if (!retVal) {
+				if(this.currentWord == 'new') {
+					retVal = this.currentWord;
+                }
+	        }
 	        return retVal;
 	        //ащк 
 	    }
@@ -2339,7 +2367,9 @@ function selectFromList(psStrList, psCurWord) {
 	for(i=0; i<arr.length; i++){
 		vDocLine = '';
 		tLine = arr[i];
-		tLine = arr[i].substring(4);
+		if (tLine.substr(4, 1) == " ") {
+		    tLine = arr[i].substring(4);
+		}
 		tPos = tLine.indexOf("|"); // А надо окументацию убирать? Опционально?
 		if(tPos != -1) {			
 			vDocLine = tLine.substring(tPos+1);
@@ -2791,6 +2821,9 @@ function getMembersFromCtags() {
 			if(vPos>0) {
 				rv = getMethodsForThis(vPos, IntellPlus.startLineNo);
             }
+		} else if(IntellPlus.currentWord == 'new') {
+			rv = gCtagsMapLast.getAllClasses();
+        
 		} else {
 			rv = gCtagsMapLast.getMembersByClass(IntellPlus.typeCWD);
 			if(!rv) {
@@ -2971,16 +3004,25 @@ function HtmlIntell() {
     }
 }
 
-function getMembersFromSql() {
+function getMembersFromSql(psWord,psAllText) {
  	if(gIntellDebug) {
 		debugger;
 	}	
 	var vRetVal = '';
-	//\todo -  кончил тут 2020-11-05 01:27:12   
-	//IntellPlus.
-	
+	var vSa = new CSqlTextAnalizer(psWord,psAllText);
+	var vRetVal = vSa.analyze();
+	IntellPlus.curWordType = vSa.getFoundTable();
+	if(vRetVal.length > 0) {    
+		var ara = new Array;
+		try { 
+			ara = vRetVal.split(',');
+        } catch(e) {
+        }
+		return ara.join('\n');
+    }
 	return vRetVal;
 }// getMembersFromSql()
+
 
 /*	UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU
 	Основная процедура запуска скрипта. Обеспечивает распознавание возможности коде-комплита, 
@@ -3032,16 +3074,18 @@ function getWordList() {
 	var allText = PrepareModuleText(view.line, view.column);
 	
 	
-	var Methods = "";
+	var Methods = "";// стринг с разделителем '\n'
 	var ProgIdS = "";
 	var attrib = "";
+	var typeCWD = '';
 	// todo отработать: gJsLvalDict = new ActiveXObject("|") << вставка из списка прог-идов
 	if (IntellPlus.currentLine == '') {
 		/*insertTemplate();*/		
 		return;
 	//} else if (IntellPlus.){
 	} else if (cLang == 'sql'){
-		Methods = getMembersFromSql();
+		Methods = getMembersFromSql(curWord, allText);
+		typeCWD = IntellPlus.curWordType; // не получается вернуть в параметре имя таблицы..
 	} else if (isWordCreateObj(curWord)){
 	    ProgIdS = loadFromFile(gIntelFileOTD);
 	} else if (IntellPlus.curPostFix.length > 0) { // trdm 2020-11-03 18:07:14  
@@ -3049,10 +3093,10 @@ function getWordList() {
 			currentView.anchor = currentView.anchor - 2;
         }
         attrib = ' = '+curWord+' '+ IntellPlus.curPostFix[0]+' 1;';
-    } else if (curWord == 'this') {
+    } else if (curWord == 'this' || curWord == 'new') {
         Methods = getMembersFromCtags();
 	} else if (!Methods){
-		var typeCWD = getSimleType_js(curWord, allText);
+		typeCWD = getSimleType_js(curWord, allText);
 		if (!typeCWD){
 			// Прикинемся что объект строка? .....
 			if(gOtherVarAsString)	Methods = getAtributesFromType("String");
