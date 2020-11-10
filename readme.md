@@ -28,8 +28,15 @@
 #### intelMessage.js
 - функционал вывода отладочных и прочих сообщений в отдельное окно Notepad++
 	![screenshot](https://github.com/trdm/jn-npp-scripts/blob/master/Doc/Screenshot_278.png)
-
-
+#### intelOle.js
+- функционал для извлечения методов и свойств ActiveX-объектов для автоподстановки. набор функций-утилит для Intell.js
+#### JsDecoder.js
+- форматер для javascript;
+#### cssFormater.js
+- форматер для css;
+#### trdmBrackets.js
+- функциона "обрамителя". Позволяет обрамить текст в коде выбранной конструкцией, например двойными кавычками, конструкцией "СокрЛП(...)" и подобными. Если текст состоит из нескольких слов, его необходимо выделить.
+![screenshot](https://raw.githubusercontent.com/trdm/jn-npp-scripts/master/Doc/trdmBrackets.js.gif)
 
 
 Взять сам Notepad++ c установлеными скриптами можно в каталоге Bin: https://github.com/trdm/jn-npp-scripts/blob/master/Bin/NotepadPP.7z
@@ -58,10 +65,9 @@ Profiler.dll - профайлер. Он используется для целе
 - Каталог plugins\jN\Intell
 - Каталог plugins\jN\system
 - Каталог plugins\jN\lib
-- Зарегистрировать компоненту svcsvc.dll из каталога system.
+- Зарегистрировать компоненту svcsvc.dll из каталога system. Описание компоненты: https://script-coding.com/svcsvc.html
 
 На данный момент реализована только базовая функциональность. 
 В планах подключить функционал разбора com-компонент для разбора их методов и свойств. Допилить под vbscript.
 Успешность разбора текста зависит от стиля кодинга. Скрипт ориентирован на тексты с классическим процедурным 
 программированием.
-![screenshot](https://github.com/trdm/jn-npp-scripts/blob/master/Doc/Screenshot_36.png)
