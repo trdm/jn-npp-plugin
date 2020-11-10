@@ -92,7 +92,7 @@ function addHotSym(psFu, psKey) {
 		key: psKey, // "I"
 		cmd: psFu
 	};
-	addHotKey(rv);	// Различные клавиши 
+	addHotKey(rv);	// Различные клавиши <>
 }
 
 // Ввоод символов в русской раскладке схема Alt+' >> ' ; Alt+$ >> $. Можно не переключать раскладку.
@@ -100,8 +100,12 @@ function typeSymbol_1() {	typeSymbol( '<' );} addHotSym(typeSymbol_1,0xBC);
 function typeSymbol_3() {	typeSymbol( '\'' );} addHotSym(typeSymbol_3,0xDE);
 function typeSymbol_2() {	typeSymbol( '>' );} addHotSym(typeSymbol_2,0xBE);
 function typeSymbol_4() {	typeSymbol( '~' );} addHotSym(typeSymbol_4,0xC0);
-function typeSymbol_5() {	typeSymbol( '$' );} addHotSym(typeSymbol_5,0x34);
-function typeSymbol_6() {	typeSymbol( '#' );} addHotSym(typeSymbol_6,0x33); //########
+function typeSymbol_5() {	typeSymbol( '$' );} addHotSym(typeSymbol_5,0x34);//$
+function typeSymbol_6() {	typeSymbol( '#' );} addHotSym(typeSymbol_6,0x33); //#########
+function typeSymbol_7() {	typeSymbol( '|' );} addHotSym(typeSymbol_7,0xDC); //
+function typeSymbol_8() {	typeSymbol( '[' );} addHotSym(typeSymbol_8,0xDB); //
+function typeSymbol_9() {	typeSymbol( ']' );} addHotSym(typeSymbol_9,0xDD); //
+function typeSymbol_10() {	typeSymbol( '\'' );} addHotSym(typeSymbol_10,0xDE); //
 
 function calcNoWhiteSpaceSymbolsCount() {
 	//debugger;
@@ -454,172 +458,3 @@ VK_OEM_5 0xDC - Used for miscellaneous characters; it can vary by keyboard. For 
 VK_OEM_6 0xDD - Used for miscellaneous characters; it can vary by keyboard. For the US standard keyboard, the ']}' key
 */
 
-/*
-QString Dialog::translateString(const QString &arg1, int var)
-{
-	QString txt_end = "";
-    QString txt = arg1;
-	switch (var) {
-	case 1:	{
-        txt = arg1.trimmed();
-        QString ruChars = QString::fromUtf8("А,а,Б,б,В,в,Г,г,Д,д,Е,е,Ё,ё,  Ж,ж,  З,з,И,и,Й,й,К,к,Л,л,М,м,Н,н,О,о,П,п,Р,р,С,с,Т,т,У,у,Ф,ф,Х,х,  Ц,ц,  Ч,ч,  Ш,ш,  Щ,щ,      Ы,ы,Э,э,Ю,ю,  Я,я,  Ъ,ъ,Ь,ь");
-        QString laChars = "A,a,B,b,V,v,G,g,D,d,E,e,YE,ye,ZH,zh,Z,z,I,i,Y,y,K,k,L,l,M,m,N,n,O,o,P,p,R,r,S,s,T,t,U,u,F,f,KH,kh,TS,ts,CH,ch,SH,sh,SHCH,shch,Y,y,E,e,YU,yu,YA,ya,_,_,_,_";
-        QString laCharsAll = "A a,B b,C c,D d,E e,F f,G g,H h,I i,J j,K k,L l,M m,N n,O o,P p,Q q,R r,S s,T t,U u,V v,W w,X x,Y y,Z z";
-        laCharsAll = laCharsAll.replace(" ",",");
-        QMap<QString,QString> chMap;
-        QStringList st_ru = ruChars.split(",");
-        QStringList st_la = laChars.split(",");
-        QStringList st_laAll = laCharsAll.split(",");
-
-        QStringList st_NumberAll;
-        st_NumberAll << "0"  << "1"  << "2"  << "3"  << "4"  << "5"  << "6"  << "7"  << "8"  << "9";
-
-        if (st_ru.size() == st_la.size()){
-            for(int i = 0; i<st_la.size(); i++){
-                chMap[st_ru.at(i).trimmed()] = st_la.at(i).trimmed();
-            }
-        }
-        QString txt_ch_ru, txt_ch_la;
-        for(int i = 0; i<txt.count(); i++){
-            txt_ch_ru = txt.at(i);
-            txt_ch_la = "_";
-            if (chMap.contains(txt_ch_ru)){
-                txt_ch_la = chMap.value(txt_ch_ru);
-            } else if (st_laAll.contains(txt_ch_ru)){
-                txt_ch_la = txt_ch_ru;
-            } else if (st_NumberAll.contains(txt_ch_ru)){
-                txt_ch_la = txt_ch_ru;
-            }
-            txt_end.append(txt_ch_la);
-        }
-        while (txt_end.indexOf("__") != -1) {
-            txt_end = txt_end.replace("__","_");
-        }
-        txt_end = txt_end.left(100);
-
-		break;
-	}
-	case 2:	{
-        txt = arg1.trimmed();
-
-		QChar txt_ch;
-		QString txt_t;
-        txt_end.append(txt).append(",\"");
-        if (txt.count()>0){
-            txt_end.append(txt.at(0));
-        }
-
-		for(int i = 1; i<txt.count(); i++){
-			txt_ch = txt.at(i);
-			txt_t = txt_ch;
-			if (txt_ch.isLetter())
-				if (!txt_ch.isLower()){
-					txt_t = QString(" ").append(txt_ch.toLower());
-				}
-				txt_end.append(txt_t);
-			}
-
-		txt_end.append("\"");
-
-		break;
-	}
-    case 3:	{
-        txt = arg1.trimmed();
-        QString empStr(" ");
-        txt_end = txt;
-        txt_end = txt_end.replace(QString("\n\r"),empStr);
-        txt_end = txt_end.replace(QString("\n"),empStr);
-        txt_end = txt_end.replace(QString("\r"),empStr);
-        break;
-
-    }
-    case 4:	{
-        // Объединить абзацы в строки.
-        txt_end = txt;
-        QStringList list = txt_end.split("\n");
-        int cnt = list.count();
-        QString resStr, curStr;
-        QChar charItem;
-        bool newLine = false;
-
-        if (cnt > 0) {
-            resStr = list.at(0);
-            for (int i=1; i<cnt; i++){
-                curStr = list.at(i);
-                newLine = false;
-
-                if (curStr.length()>0){
-                    charItem = curStr.at(0);
-                    newLine = charItem.isDigit() || charItem.isSpace() || (charItem.isLetter() && charItem.isUpper());
-                }
-                if (newLine){
-                    resStr.append("\n");
-                } else {
-                    resStr.append(" ");
-                }
-                resStr.append(curStr);
-            }
-        }
-        txt_end = resStr;
-        txt_end.append("\n");
-        break;
-    }
-    case 6:	{
-        // Qwertyu -> Йцукенг
-        txt_end = ""; //Результат. txt - исходник;
-        QString latQwerty = QString::fromUtf8("qwertyuiop[]asdfghjkl;'zxcvbnm,..QWERTYUIOP[]ASDFGHJKL;'ZXCVBNM,./");
-        QString rusQwerty = QString::fromUtf8("йцукенгшщзхъфывапролджэячсмитьбю.ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ.");
-        int pos = 0;
-        for (int i = 0; i<txt.length(); i++){
-            QChar cCur = txt.at(i);
-            pos = latQwerty.indexOf(cCur);
-            if (pos != -1) {
-                cCur = rusQwerty.at(pos);
-            }
-            txt_end.append(cCur);
-        }
-        break;
-    }
-    case 5:	{
-        // Порезать строки на N символов
-		// >>>>>>> function splitTheSelectedText() {
-        txt_end = txt;
-        int sLen = ui->lineLength->text().toInt();
-        if (sLen<=0 || sLen<=10 || sLen > 150) {
-            break;
-        }
-
-        QStringList list = txt_end.split("\n");
-        int cnt = list.count();
-        QString resStr, curStr;
-        QChar charItem;
-        for (int i=0; i<cnt; i++){
-            curStr = list.at(i);
-            int steps = curStr.length()/sLen;
-            for (int s = 1; s<=steps; s++){
-                int cPosS = s*sLen;
-                int cPosE = (s-1)*sLen;
-                while(cPosS > cPosE) {
-                    charItem = curStr.at(cPosS);
-                    if (charItem.isSpace()){
-                        curStr[cPosS] = QChar('\n');
-                        break;
-                    }
-                    cPosS--;
-                }
-            }
-
-            resStr.append(curStr).append("\n");
-        }
-
-        txt_end = resStr;
-//        txt_end.append("\n");
-        break;
-    }
-
-	default:
-		break;
-	}
-	return txt_end;
-}
-*/
