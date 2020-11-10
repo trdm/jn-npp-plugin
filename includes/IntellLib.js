@@ -1,5 +1,5 @@
 var gIntell_engLetersAll = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM";
-var gIntell_rusLetersAll = "йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ";
+var gIntell_rusLetersAll = "Р№С†СѓРєРµРЅРіС€С‰Р·С…СЉС„С‹РІР°РїСЂРѕР»РґР¶СЌСЏС‡СЃРјРёС‚СЊР±СЋР™Р¦РЈРљР•РќР“РЁР©Р—РҐРЄР¤Р«Р’РђРџР РћР›Р”Р–Р­РЇР§РЎРњРРўР¬Р‘Р®";
 
 
 // trdm 2018-12-25 08:11:41 
@@ -28,7 +28,7 @@ function arrayContains(psArray, psItem) {
 }
 
 // trdm 2018-12-25 08:32:01 
-// Возвращает первое вхожжение элемента из массива в строку
+// Р’РѕР·РІСЂР°С‰Р°РµС‚ РїРµСЂРІРѕРµ РІС…РѕР¶Р¶РµРЅРёРµ СЌР»РµРјРµРЅС‚Р° РёР· РјР°СЃСЃРёРІР° РІ СЃС‚СЂРѕРєСѓ
 function strContainsI(psSrc, psAra, psICase) {
 	var rv = "";
 	var vItem = "";
@@ -52,6 +52,19 @@ function strContainsI(psSrc, psAra, psICase) {
 function strContains(psSrc, psAra) {
 	return strContainsI(psSrc, psAra, false);
 }
+
+
+function strStartWith(psStr, psWith) {
+	var vRetVal = false;
+	if(psStr.length>=psWith.length) {
+		var vLenFr = psWith.length;
+		if(psStr.substring(0,vLenFr) == psWith) {
+			vRetVal = true;
+        }
+    }
+	return vRetVal;
+}
+
 
 // trdm 2018-12-25 08:11:41 
 function indexOfArrayBool(psStr, psAra) {
@@ -90,7 +103,7 @@ function strBetween(psSrc, psLeft, psRight) {
 	return rv;
 }
 
-//	ends with this - заканчивается этим
+//	ends with this - Р·Р°РєР°РЅС‡РёРІР°РµС‚СЃСЏ СЌС‚РёРј
 function strEndWithThis(psStrSrc, psEnd) {
 	var vRetVal = false;
 	var vLastIdx = psStrSrc.lastIndexOf(psEnd);
@@ -102,20 +115,20 @@ function strEndWithThis(psStrSrc, psEnd) {
     }	
 	return vRetVal;
 }
-// var vTestStr = "Процедура ПроверитьОбновлениеАдресныхОбъектов() Экспорт";
-// var vResStr = strBetween(vTestStr,"Процедура","(");
+// var vTestStr = "РџСЂРѕС†РµРґСѓСЂР° РџСЂРѕРІРµСЂРёС‚СЊРћР±РЅРѕРІР»РµРЅРёРµРђРґСЂРµСЃРЅС‹С…РћР±СЉРµРєС‚РѕРІ() Р­РєСЃРїРѕСЂС‚";
+// var vResStr = strBetween(vTestStr,"РџСЂРѕС†РµРґСѓСЂР°","(");
 // message(vResStr);
 
 function test1() {
-	var vTestStr = "Процедура ПроверитьОбновлениеАдресныхОбъектов() Экспорт";	
+	var vTestStr = "РџСЂРѕС†РµРґСѓСЂР° РџСЂРѕРІРµСЂРёС‚СЊРћР±РЅРѕРІР»РµРЅРёРµРђРґСЂРµСЃРЅС‹С…РћР±СЉРµРєС‚РѕРІ() Р­РєСЃРїРѕСЂС‚";	
 	
-	var vResStr = rightFrom(vTestStr,"Процедура");
+	var vResStr = rightFrom(vTestStr,"РџСЂРѕС†РµРґСѓСЂР°");
 	message(vResStr);
 	vResStr = leftFrom(vResStr,"(");
 	message(vResStr);
 	
-	vTestStr = "Процедура ПроверитьОбновлениеАдресныхОбъектов() Экспорт";	
-	vResStr = strBetween(vTestStr,"Процедура","(");
+	vTestStr = "РџСЂРѕС†РµРґСѓСЂР° РџСЂРѕРІРµСЂРёС‚СЊРћР±РЅРѕРІР»РµРЅРёРµРђРґСЂРµСЃРЅС‹С…РћР±СЉРµРєС‚РѕРІ() Р­РєСЃРїРѕСЂС‚";	
+	vResStr = strBetween(vTestStr,"РџСЂРѕС†РµРґСѓСЂР°","(");
 	message(vResStr);
 	vResStr = leftFrom(vResStr,"(");
 	message(vResStr);
