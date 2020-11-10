@@ -13,17 +13,90 @@ Template:html
 </head>
 
 <body>
-
+	
 </body>
 </html>
 TemplateEnd
 
 Template:body
-<body></body>
+<body>@</body>
+TemplateEnd
+
+Template:ul
+<ul>@
+    <li></li>
+    <li></li>	
+</ul>
 TemplateEnd
 
 
 Template:script
-<script type="text/javascript" src = ''>	</script>
+<script type="text/javascript" src = ''>@	</script>
+TemplateEnd
+
+Template:img
+<img src="@" alt="альтернативный текст">
+TemplateEnd
+
+Template:table
+<table > 
+	<colgroup>
+		<col class="" style="">
+		<col class="cl" style="">
+	</colgroup>
+	
+	<tr >
+		<th></th>
+	</tr>
+	<tbody >
+		<tr>
+			<td></td>
+		</tr>
+	</tbody>
+</table>
+TemplateEnd
+
+Template:table_s
+<table > 
+	<tbody >
+		<tr>
+			<td></td>
+		</tr>
+	</tbody>
+</table>
+TemplateEnd
+
+
+Template:ol
+<ol> 
+	<li value=""> </li>
+</ol >
+TemplateEnd
+
+
+TemplateLine:
+ff:font-family: @;
+fs:font-size:@px;
+li:<li value="">@</li>
+div:<div>@</div>
+H1:<H1>@</H1>
+H2:<H2>@</H2>
+H3:<H3>@</H3>
+H4:<H4>@</H4>
+H5:<H5>@</H5>
+H6:<H6>@</H6>
+style:<style type="text/css">@</style>
+link_style: <style rel="stylesheet" type="text/css" href="@" />
+pre:<pre>@</pre>
+p:<p>@</p>
+a:<a href="@" alt=""></a>
+br:<br>@
+hr:<hr>@
+tr:<tr>@</tr>
+td:<td>@</td>
+th:<th>@</th>
+b:<b>@</b>
+colgroup: <colgroup><col class="" style=""></colgroup>
+title: <title>@</title>
 TemplateEnd
 

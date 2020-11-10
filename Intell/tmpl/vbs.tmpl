@@ -1,17 +1,17 @@
 Template:Function
-Function
+Function 
 
 End Function
 TemplateEnd
 
 Template:Sub
-Sub
+Sub 
 
 End Sub
 TemplateEnd
 
 Template:if
-if Then
+if  Then 
 	
 end if 
 TemplateEnd
@@ -28,5 +28,26 @@ For i=0 To N
 Next
 TemplateEnd
 
+Template:Select
+Select Case TestExpr
+	Case "0" rv = 0
+	Case "1" rv = 1
+End Select
+TemplateEnd
 
+Template:Class
+Class ClassName 'Название класса
+	
+	Public classMemberPublic 'Публичный член класса
+	Private classMemberPrivate 'Приватный член класса
+	
+	Private Sub Class_Initialize
+		' Конструктор класса
+	End Sub 
+
+	Private Sub Class_Terminate	
+		' Деструктор класса
+	End Sub
+End Class
+TemplateEnd
 
