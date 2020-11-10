@@ -2,9 +2,60 @@
 	trdm 2020-11-03 13:27:43 
 	man MySQL 8.0 'CREATE TABLE Statement' - https://dev.mysql.com/doc/refman/8.0/en/create-table.html
 	filename: IntellSql.js
-
 */ 
+/*
+	materials:
+	https://stackoverflow.com/questions/4060475/parsing-sql-create-table-statement-using-jquery
+	https://code.google.com/archive/p/trimpath/wikis/TrimQuery.wiki
+	parse sql:
+		e:\Projects\_Utils\js-sql-parser-master\trimpath
+		e:\Projects\_Utils\js-sql-parser-master\trimpath\query.js
+	https://stackoverflow.com/questions/5192223/convert-javascript-code-to-c-code		
+	
+	There are a few compilers that translate JavaScript and TypeScript to C:
+		https://bellard.org/quickjs/ - QuickJS compiles JavaScript to C using an embedded JavaScript engine.
+		https://github.com/andrei-markeev/ts2c - ts2c translates JavaScript and TypeScript source code to C.
+		https://github.com/NectarJS/nectarjs - NectarJS compiles JavaScript to C or WebAssembly.
+
+*/
 require("lib/ECMA262.js");
+var gFsoIS = new ActiveXObject("Scripting.FileSystemObject");
+
+function DateLastModified(psFileName) {
+	//debugger;
+	var vFName = ''+psFileName;
+	var vFile;
+	if(vFName) {
+		if(gFsoIS.FileExists(vFName)) {
+			vFile = gFsoIS.GetFile(vFName);
+			return ''+vFile.DateLastModified;
+		}
+    }	
+	return '';
+}
+
+var IntellSql = {
+	analisers: new Array()
+	, getAnaliser: function(psFileName) {
+    	var vRetVal = '';
+		for(var i = 0; i<this.analisers.length; i++) {
+			vRetVal = this.analisers[i];
+			if(vRetVal.filename == psFileName) {
+				var vDlm = DateLastModified(vRetVal.filename);
+				if(vRetVal.filetime != vDlm) {
+					vRetVal.parse();
+                }
+            } else {
+				vRetVal = '';
+			}
+        }
+		if(!vRetVal) {
+			vRetVal = new CSqlDumpAnalizer(psFileName);
+			vRetVal.parse();
+        }
+    	return vRetVal;
+    }
+}
 
 function CSqlTableFild(psName) {
 	this.name = psName;
@@ -50,17 +101,338 @@ function CSqlTable(psName) {
         }
     	return vRetVal;
     }	
+};
+
+// trdm 2020-11-09 06:00:38  
+// CQueryTable - таблица, используемая в запросе.
+function CQueryTable(psName, psAlias) {
+	this.name = psName;
+	this.alias = psAlias;
+	this.print = function() {
+		message("name="+this.name+'; alias=' + this.alias);
+	}
+}
+/* trdm 2020-11-06 00:39:41  
+	Задача: добыть псевдонимы таблиц и их исходные имена.
+*/
+function CSqlTextAnalizer(psWord, psText) {
+	this.curText = psText;
+	this.curWord = psWord;
+	this.foundTable = '';
+	this.sqlTables = new Array;
+	this.fileOfDump = ''; // Файл дампа SQL
+	this.getFoundTable = function() {
+    	return this.foundTable;
+    }
+	this.getFromClause = function(psSqlQuery) {
+		// E:\Projects\_Utils\js-sql-parser-master\trimpath\query.js - 858
+		// разбор из query.js
+		var sqlQuery = psSqlQuery;
+		var sqlQuery = sqlQuery.replace(/\n/g, ' ').replace(/\r/g, ' ');
+		sqlQuery = sqlQuery.replace(/(\s+AS\s+)/gi, " as ");
+		
+        var err = function(errMsg) { 
+            throw ("[ERROR: " + errMsg + " in query: " + sqlQueryIn + "]"); 
+        };
+		
+        var strip_whitespace = function(str) {
+            return str.replace(/\s+/g, '');
+        }
+
+		var findClause = function(str, regexp) {
+			var clauseEnd = str.search(regexp);
+			if (clauseEnd < 0)
+				clauseEnd = str.length;
+			return str.substring(0, clauseEnd);
+		}
+		
+		
+		sqlQuery = trimSimple(sqlQuery);
+		var vRe1 = /\s+from\s+/i;
+		sqlQuery = sqlQuery.replace(vRe1,' FROM ');		
+		{
+		var fromSplit = sqlQuery.substring(7).split(" FROM ");
+		if (fromSplit.length != 2)
+			err("missing a FROM clause");
+		
+		//SELECT Invoice.*, Customer.* FROM Invoice, Customer
+		//SELECT * FROM Invoice, Customer
+		//DELETE things, relationships FROM relationships LEFT OUTER JOIN things ON things.relationship_id = relationships.id WHERE relationships.id = 2
+		//SELECT * FROM relationships LEFT OUTER JOIN users ON relationships.created_by = users.id AND relationships.updated_by = users.id LEFT OUTER JOIN things ON things.relatedrelationship_id = relationships.id  ORDER BY relationships.updated_at DESC LIMIT 0, 20
+		var columnsClause = fromSplit[0].replace(/\.\*/g, ".ALL");
+		var remaining     = fromSplit[1];
+
+		var fromClause    = findClause(remaining, /\sWHERE\s|\sGROUP BY\s|\sHAVING\s|\sORDER BY\s|\sLIMIT/i);
+		var fromTableClause = findClause(fromClause, /\sLEFT OUTER JOIN\s/);
+		var fromTables = strip_whitespace(fromTableClause).split(',');
+		remaining = remaining.substring(fromClause.length);
+		
+		var fromClauseSplit = fromClause.split(" LEFT OUTER JOIN ");
+		var fromClauseParts = [fromClauseSplit[0]];
+		var leftJoinComponents;
+		for (var i = 1; i < fromClauseSplit.length; i++) {
+			leftJoinComponents = /(\w+)\sON\s(.+)/.exec(fromClauseSplit[i]);
+			fromTables.push(leftJoinComponents[1]);
+			fromClauseParts.push( '('+leftJoinComponents[1]+')'+'.ON(WHERE_SQL("'+leftJoinComponents[2]+'"))' );
+		}
+		fromClause = fromClauseParts.join(", LEFT_OUTER_JOIN");
+		
+		if(strip_whitespace(columnsClause) == '*') {
+			var new_columns = [];
+			for(var i=0; i<fromTables.length; i++) {
+				new_columns.push(fromTables[i]+'.ALL')
+			}
+			columnsClause = columnsClause.replace(/\*/, new_columns.join(', '))
+		}
+		var whereClause   = findClause(remaining, /\sGROUP BY\s|\sHAVING\s|\sORDER BY\s|\sLIMIT/);
+		remaining = remaining.substring(whereClause.length);
+		var groupByClause = findClause(remaining, /\sHAVING\s|\sORDER BY\s|\sLIMIT /);
+		remaining = remaining.substring(groupByClause.length);
+		var havingClause  = findClause(remaining, /\sORDER BY\s|\sLIMIT /);
+		remaining = remaining.substring(havingClause.length);
+		var orderByClause = findClause(remaining, /\sLIMIT /).replace(/\sASC/g, ".ASC").replace(/\sDESC/g, ".DESC");
+		remaining = remaining.substring(orderByClause.length);
+		var limitClause   = remaining;
+		}
+		return fromClause;
+		
+	}
+	this.analyze = function() {
+		if(this.curText.length == 0) 
+			return '';
+		this.foundTable = '';
+		this.curWord = this.curWord.toLowerCase();
+		var vText  = this.curText;
+		var vLinesArray  = this.curText.split('\n');
+		if(vLinesArray.length == 1) { // не тот разделитель
+			vLinesArray  = this.curText.split('\r\n');
+        }
+		var vReDump = /\s*(dump)\s*\=\s*/i;
+		var vLine = '';
+		var vLineParts = '';
+		this.fileOfDump = '';
+		
+		var vSqlDumpAnaliser = ''; //new CSqlDumpAnalizer;
+		//debugger;
+		for(var i = 0; i< vLinesArray.length; i++) {
+			vLine = vLinesArray[i];
+			vLine = trimSimple(vLine);
+			if(strStartWith(vLine,'--')) {
+				if(vReDump.test(vLine)) {
+					vLineParts = vLine.split('=');
+					if(gFsoIS.FileExists( trimSimple(vLineParts[1]))) {
+						this.fileOfDump = vLineParts[1];
+                    }
+                }            
+				vLinesArray[i] = '';
+            }
+        }
+		if(this.fileOfDump) {
+			vSqlDumpAnaliser = IntellSql.getAnaliser(this.fileOfDump);        
+			//vSqlDumpAnaliser.setFileName(this.fileOfDump);
+			// parse - уже вызывается в IntellSql.getAnaliser
+			//vSqlDumpAnaliser.parse(); // таблицы и их поля получены.
+        }
+		
+		
+		vText = vLinesArray.join('\n');
+
+		var vFromClause = this.getFromClause(vText);
+		vFromClause = vFromClause.replace(/\s+as\s+/i,' as ');
+		//message('vFromClause = '+vFromClause);
+		var vSideLeftArr = ['LEFT','RIGHT','FULL',''];
+		var vSideMidArr = ['OUTER','INNER',''];
+		for(var i = 0; i< vSideLeftArr.length; i++) {
+			var vSideL = vSideLeftArr[i];
+			for(var i2 = 0; i2< vSideMidArr.length; i2++) {
+				var vSideM = vSideMidArr[i2];
+				var vRepl = '';
+				if(vSideL) 
+					vRepl = '\\s+('+vSideL+')';
+				if(vSideM) {
+					vRepl = vRepl + '\\s+('+vSideM+')';
+                }
+				vRepl = vRepl + '\\s+(JOIN)\\s+';
+				//message('vRepl = '+vRepl);
+				var reRepl = new RegExp(vRepl,'ig');
+				var vFromClause = vFromClause.replace(reRepl,'(JOIN)');
+
+            }
+        }
+		//debugger;
+		//message('vFromClause = '+vFromClause);
+		var vArrOfTable = vFromClause.split('(JOIN)');
+		var vTab, vTabArr, vNameQTable, vAliasQTable;
+		for(var i = 0; i<vArrOfTable.length; i++) {
+			var vTab = vArrOfTable[i];
+			var vTabArr = vTab.split(' ');
+			vNameQTable = vTabArr[0];			
+			if(vTabArr.length == 2) { // field alias
+				vAliasQTable = vTabArr[1];
+            } else if(vTabArr.length>2) { //field as alias
+				if(vTabArr[1]=='as') {
+					vAliasQTable = vTabArr[2];
+				}
+            }
+			vAliasQTable = vAliasQTable.toLowerCase();
+			if(this.curWord == vAliasQTable) {
+				this.foundTable = vNameQTable.toLowerCase();
+			}
+
+			
+        }
+		if(this.foundTable) {
+			//debugger;
+			var vFields = '';
+			if(vSqlDumpAnaliser) {
+            	vFields = vSqlDumpAnaliser.getFields(this.foundTable);
+            }
+			//message('this.curWord='+this.curWord+'; this.foundTable = '+this.foundTable + '; vFields = '+vFields);
+			return vFields;
+        }
+		return '';		
+	}
+}
+
+
+function parserSqlText( psText, psVisitor) {
+	//debugger;
+	var vLineArr = psText.split('\n');
+	var vTextLine = "";
+	var vState = 0; 
+	var vNeedLoop = true;
+	var vWordList = new Array;
+	var vNumbers = "0123456789";
+	/* 0 - unknown; 1 - comment. 2 - string */
+	for(var i = 0; i< vLineArr.length; i++) {
+		vTextLine = vLineArr[i];
+		
+		do  { 
+			vNeedLoop = false;
+			vTextLine = trimSimple(vTextLine);
+			if(vTextLine.length == 0) {
+				continue;
+			}
+			if(vTextLine.indexOf('--') == 0) {
+				continue; // skip comment            
+			} else if(vTextLine.indexOf('/*') == 0) {
+				vState = 1; 
+				if(vTextLine.indexOf('*/') != -1) {
+					vTextLine = strRightFrom(vTextLine, '*/')
+					vNeedLoop = true;
+					if(vTextLine == ";") {
+						vNeedLoop = false;
+					}
+				}
+			} else {
+				var vWord = '';
+				var vChar = '';
+				var vNeedPushW = false;
+				var vState = 0; // 1 - in string
+				var vOffset = 0;
+				//message("src: " + vTextLine);
+				for(var iChr = 0; iChr< vTextLine.length; iChr++) {
+					vChar = vTextLine[iChr];
+					if(vState == 1) {
+						vWord = vWord +  vChar;								
+						if(vChar == '"') {
+							vState  = 0;
+							vWordList.push(vWord);
+							vWord = '';
+						}                        
+						continue;
+					}
+					if(gIntell_engLetersAll.indexOf(vChar) != -1) {
+						vWord = vWord + vChar;
+					} else if(gIntell_rusLetersAll.indexOf(vChar) != -1) {
+						vWord = vWord + vChar;
+					} else if(vChar == '_' || vChar == '.') {
+						vWord = vWord + vChar;
+					} else if(vNumbers.indexOf(vChar) != -1) {
+						vWord = vWord + vChar;
+					} else if(vChar == '\t' || vChar == ' ') {
+						vNeedPushW = true;
+					} else if(vChar == '=') {
+						vNeedPushW = true;
+						if(vWord.length > 0 ) {
+							vWordList.push(vWord);                            
+						}
+						vWordList.push("=");
+						vWord = '';                        
+					} else if(vChar == '(' || vChar == ')' || vChar == ',') {
+						if(vWord.length > 0 ) {
+							vWordList.push(vWord);                            
+						}
+						vWordList.push(vChar);
+						vWord = '';                        
+					} else if(vChar == '\'') {
+						if(vWord.length != 0) {
+							vWordList.push(vWord);
+						}
+						vOffset = vTextLine.indexOf('\'',iChr+1);
+						vWord = vChar + vTextLine.substr(iChr+1,vOffset-iChr);
+						if(vWord.length != 0) {
+							vWordList.push(vWord);
+							vWord = '';
+						}
+						iChr = vOffset;
+					} else if(vChar == ';') {
+						// Конец одной инструкции, надо отправить 
+						if(vWord.length != 0) {
+							vWordList.push(vWord);
+						}
+						vWord = '';       
+						psVisitor.analyze(vWordList);
+						vWordList.length = 0;
+					} else if(vChar == '"') {
+						if(vWord.length != 0) {
+							if(vWord[0] == '"') {
+								vWord = vWord + vChar;
+								vWordList.push(vWord);
+							}
+						} else {
+							vWord = '"';
+							vState = 1;
+						}
+					}
+					if(vNeedPushW) {
+						if(vWord.length != 0) {
+							vWordList.push(vWord);
+						}
+						vWord = '';
+						vNeedPushW = false;                        
+					}
+				} //for(var iChr = 0; iChr< vTextLine.length; iChr++) {
+				if(vWord.length > 0 ) {
+					vWordList.push(vWord);                            
+				}
+				//message(vTextLine);
+			}
+		}while(vNeedLoop);			
+	}	// for(var i = 0; i< vLineArr.length; i++) {
+	psVisitor.analyze(vWordList);
+	return true; 	
 }
 
 // trdm 2020-11-03 00:22:55  Для анализов дампов БД MySql структуры их таблиц.
 function CSqlDumpAnalizer(psFileName) {
 	this.filename = psFileName;
+	this.filetime = DateLastModified(psFileName); // время последней записи файла.
 	this.sqltables = new Array;
 	this.reservWord = Array('unique','primary','key');
 	this.textOfFile = "";
 	this.init = function() {
     	var vRetVal = false;
     	return vRetVal;
+    } 
+	this.setFileName = function(psFileNameF) {
+		this.filename = psFileNameF;
+		this.filetime = DateLastModified(psFileName); // время последней записи файла.
+    } 
+	this.getFields = function( psTableName ) {
+		var vTabName = psTableName;
+		vTabName = vTabName.toLowerCase();
+		return this.printTables(vTabName);
     } 
 	this.printTables = function( psFormatOrTab ) {
 		var vRetVal = '';
@@ -71,10 +443,12 @@ function CSqlDumpAnalizer(psFileName) {
         } else if(typeof(vFormat) == "string") {
 			vFormat = vFormat.toLowerCase();
         }
-		var vTable = null;
+		//debugger;
+		var vTable = null, vTabName = '';
 		var vFields = '';
 		for(var i = 0; i< this.sqltables.length; i++) {
 			vTable = this.sqltables[i];
+			vTabName = vTable.name;
 			if(vFormat == 0) {
 				if(vRetVal == '') {
 					vRetVal = vTable.name+':'+vTable.fildsT+';';
@@ -86,7 +460,8 @@ function CSqlDumpAnalizer(psFileName) {
 				vFields = vFields.replace(/\s+/g,'');
 				//message('vTable: ' + vTable.name+':'+vTable.fildsT+'('+vFields+')');
 			} else {
-				if(vFormat == vTable.name) {
+				vTabName = vTabName.toLowerCase();
+				if(vFormat == vTabName) {
 					vRetVal = vTable.fildsT; // просто поля через запяту.
 					vRetVal = vRetVal.replace(/\s+/g,'');
                 }
@@ -118,7 +493,7 @@ function CSqlDumpAnalizer(psFileName) {
 		var vAnalize = 0;
 		var vStr = psList.join('+');
 		var vOffset = 0;
-		debugger;
+		//debugger;
 		if(this.testArrayVal(psList,1,'temporary',1)) {
 			vOffset = 1;
 		}
@@ -222,6 +597,7 @@ function CSqlDumpAnalizer(psFileName) {
             }
         }
 		if(vStr.length > 0) {      
+			//vStr.
 			//message("out: " + vStr);
         }
 	}
@@ -240,132 +616,25 @@ function CSqlDumpAnalizer(psFileName) {
 			var vFileStream = vFile.OpenAsTextStream(1,0);
 			this.textOfFile = vFileStream.ReadAll();
         }
-		var vLineArr = this.textOfFile.split('\n');
-		var vTextLine = "";
-		var vState = 0; 
-		var vNeedLoop = true;
-		var vWordList = new Array;
-		var vNumbers = "0123456789";
-		//debugger;
-		/* 0 - unknown; 1 - comment. 2 - string */
-		for(var i = 0; i< vLineArr.length; i++) {
-			vTextLine = vLineArr[i];
-			
-			do  { 
-				vNeedLoop = false;
-				vTextLine = trimSimple(vTextLine);
-				if(vTextLine.length == 0) {
-					continue;
-                }
-				if(vTextLine.indexOf('--') == 0) {
-					continue; // skip comment            
-				} else if(vTextLine.indexOf('/*') == 0) {
-					vState = 1; 
-					if(vTextLine.indexOf('*/') != -1) {
-						vTextLine = strRightFrom(vTextLine, '*/')
-						vNeedLoop = true;
-						if(vTextLine == ";") {
-							vNeedLoop = false;
-                        }
-					}
-				} else {
-					var vWord = '';
-					var vChar = '';
-					var vNeedPushW = false;
-					var vState = 0; // 1 - in string
-					var vOffset = 0;
-					//message("src: " + vTextLine);
-					for(var iChr = 0; iChr< vTextLine.length; iChr++) {
-						vChar = vTextLine[iChr];
-						if(vState == 1) {
-							vWord = vWord +  vChar;								
-							if(vChar == '"') {
-								vState  = 0;
-								vWordList.push(vWord);
-								vWord = '';
-                            }                        
-							continue;
-                        }
-						if(gIntell_engLetersAll.indexOf(vChar) != -1) {
-							vWord = vWord + vChar;
-                        } else if(gIntell_rusLetersAll.indexOf(vChar) != -1) {
-							vWord = vWord + vChar;
-                        } else if(vChar == '_' || vChar == '.') {
-							vWord = vWord + vChar;
-                        } else if(vNumbers.indexOf(vChar) != -1) {
-							vWord = vWord + vChar;
-                        } else if(vChar == '\t' || vChar == ' ') {
-							vNeedPushW = true;
-                        } else if(vChar == '=') {
-							vNeedPushW = true;
-							if(vWord.length > 0 ) {
-								vWordList.push(vWord);                            
-                            }
-							vWordList.push("=");
-							vWord = '';                        
-                        } else if(vChar == '(' || vChar == ')' || vChar == ',') {
-							if(vWord.length > 0 ) {
-								vWordList.push(vWord);                            
-                            }
-							vWordList.push(vChar);
-							vWord = '';                        
-                        } else if(vChar == '\'') {
-							if(vWord.length != 0) {
-								vWordList.push(vWord);
-                            }
-							vOffset = vTextLine.indexOf('\'',iChr+1);
-							vWord = vChar + vTextLine.substr(iChr+1,vOffset-iChr);
-							if(vWord.length != 0) {
-								vWordList.push(vWord);
-								vWord = '';
-                            }
-							iChr = vOffset;
-                        } else if(vChar == ';') {
-							// Конец одной инструкции, надо отправить 
-							if(vWord.length != 0) {
-								vWordList.push(vWord);
-                            }
-							vWord = '';       
-							this.analyze(vWordList);
-							vWordList.length = 0;
-                        } else if(vChar == '"') {
-							if(vWord.length != 0) {
-								if(vWord[0] == '"') {
-									vWord = vWord + vChar;
-									vWordList.push(vWord);
-                                }
-                            } else {
-								vWord = '"';
-								vState = 1;
-							}
-                        }
-						if(vNeedPushW) {
-							if(vWord.length != 0) {
-								vWordList.push(vWord);
-                            }
-							vWord = '';
-							vNeedPushW = false;                        
-                        }
-                    } //for(var iChr = 0; iChr< vTextLine.length; iChr++) {
-					if(vWord.length > 0 ) {
-						vWordList.push(vWord);                            
-					}
-					//message(vTextLine);
-				}
-			}while(vNeedLoop);			
-        }	// for(var i = 0; i< vLineArr.length; i++) {
-		this.analyze(vWordList);
-    	return true; 
+		return parserSqlText(this.textOfFile, this);
+    } // this.parse = function()
+} // CSqlDumpAnalizer
+
+
+var vFileName = "F:\\DataBase\\SQL_Db\\ВольтаОфисР25n\\__Tasks\\voltacom_mantis-2.sql";
+var vFileName2 = "E:\\Документы\\__Клиенты\\!_reports\\_Вольта\\RV_2020-11-03.sql";
+
+if(false) {
+	var vText = loadFromFile(vFileName2);
+	//message(vText);
+	var vSa = new CSqlTextAnalizer('tab1',vText);
+	var vRez = vSa.analyze();
+	if(vRez) {
+		message('result: '+vRez);
     }
 }
-// trdm 2020-11-06 00:39:41  
-function CSqlAnalizer(psWord, psText) {
-	var vRetVal = '';
-	return vRetVal;
-}
-if(false) {
-	var vFileName = "F:\\DataBase\\SQL_Db\\ВольтаОфисР25n\\__Tasks\\voltacom_mantis-2.sql";
-	var vQa = new CSqlDumpAnalizer(vFileName);
+/*	var vQa = new CSqlDumpAnalizer(vFileName);
+
 	vQa.parse();
 	vQa.printTables(0);
-}
+*/
